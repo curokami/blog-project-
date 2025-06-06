@@ -1,0 +1,24 @@
+---
+import Icon from './Icon.astro';
+const categories = ["All", "Travel", "Tech"];
+---
+<div class="px-4 py-2 space-y-4">
+    <div class="relative">
+        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+            <Icon name="search" className="w-5 h-5 text-gray-400" />
+        </div>
+        <input type="search" placeholder="Search posts" class="w-full rounded-lg border-none bg-gray-100 py-2.5 pl-10 pr-4 text-gray-800 focus:ring-2 focus:ring-gray-300">
+    </div>
+    <div class="flex items-center space-x-2">
+        {categories.map((cat, index) => {
+            const isActive = cat === 'Travel'; // デザインに合わせてTravelをアクティブに
+            const activeClasses = 'bg-gray-800 text-white';
+            const inactiveClasses = 'bg-gray-200 text-gray-600';
+            return (
+                <button class={`px-4 py-1.5 rounded-full text-sm font-semibold ${isActive ? activeClasses : inactiveClasses}`}>
+                    {cat}
+                </button>
+            )
+        })}
+    </div>
+</div>
