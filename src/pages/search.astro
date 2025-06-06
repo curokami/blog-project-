@@ -40,14 +40,19 @@ import Icon from '../components/Icon.astro';
     </template>
 </Layout>
 
-<script>
-    import Fuse from 'fuse.js';
+<script type="ts">
+  import Fuse from 'fuse.js';
 
-    const searchInput = document.getElementById('search-input') as HTMLInputElement;
-    const resultsContainer = document.getElementById('search-results') as HTMLElement;
-    const itemTemplate = document.getElementById('result-item-template') as HTMLTemplateElement;
+  const searchInput = document.getElementById('search-input');
+if (!(searchInput instanceof HTMLInputElement)) throw new Error('not found');
 
-    let fuse;
+const resultsContainer = document.getElementById('search-results');
+if (!(resultsContainer instanceof HTMLElement)) throw new Error('not found');
+
+const itemTemplate = document.getElementById('result-item-template');
+if (!(itemTemplate instanceof HTMLTemplateElement)) throw new Error('not found');
+
+  let fuse;
 
     // 1. 全記事データをAPIから非同期で取得
     fetch('/api/search.json')
@@ -55,7 +60,7 @@ import Icon from '../components/Icon.astro';
         .then(data => {
             // 2. Fuse.jsを初期化
             const options = {
-                keys: ['title', 'description'], // titleとdescriptionを検索対象にする
+                keys: ['title', 'description','body'], // titleとdescriptionを検索対象にする
                 includeScore: true,
                 threshold: 0.4, // あいまい度のしきい値
             };
