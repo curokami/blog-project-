@@ -1,0 +1,8 @@
+---
+// Markdown.astro
+const { content } = Astro.props;
+---
+
+<div class="prose prose-sm sm:prose-base lg:prose-lg max-w-none text-gray-800">
+  <div set:html={content}></div>
+</div>

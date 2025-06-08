@@ -8,8 +8,9 @@ const postsCollection = defineCollection({
     pubDate: z.date(),
     author: z.string(),
     description: z.string(), // ← この行を追加
-    image: z.string().optional(),
+    image: z.string().optional(), 
     tags: z.array(z.string()).optional(),
+    body: z.string().optional(), // 本文を追加
   }),
 });
 

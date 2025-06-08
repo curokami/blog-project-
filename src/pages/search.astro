@@ -1,103 +1,100 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PageHeader from '../components/PageHeader.astro';
-import Footer from '../components/Footer.astro'; // 新しいフッターを使う
+import Footer from '../components/Footer.astro';
 import Icon from '../components/Icon.astro';
-
-// このページはUIの骨組みだけ用意し、実際の検索はクライアント側で行う
 ---
 
 <Layout title="Search">
-    <PageHeader title="Search" />
+  <PageHeader title="Search" />
 
-    <main class="px-4 py-2">
-        <div class="relative mb-4">
-            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Icon name="search" className="w-5 h-5 text-gray-400" />
-            </div>
-            <input type="search" id="search-input" placeholder="Productivity" class="w-full rounded-lg border-gray-300 py-3 pl-10 pr-4 text-gray-800 focus:ring-2 focus:ring-gray-400">
-        </div>
+  <main class="px-4 py-2">
+    <div class="relative mb-4">
+      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+        <Icon name="search" className="w-5 h-5 text-gray-400" />
+      </div>
+      <input type="search" id="search-input" placeholder="Search..." class="w-full rounded-lg border-gray-300 py-3 pl-10 pr-4 text-gray-800 focus:ring-2 focus:ring-gray-400" />
+    </div>
 
-        <h2 class="text-xl font-bold mb-2">Results</h2>
-        <div id="search-results" class="divide-y divide-gray-100">
-            </div>
-    </main>
+    <h2 class="text-xl font-bold mb-2">Results</h2>
+    <div id="search-results" class="divide-y divide-gray-100"></div>
+  </main>
 
-    <Footer activePage="search" />
+  <Footer activePage="search" />
 
-    {/* 検索結果アイテムのHTMLテンプレート */}
-    <template id="result-item-template">
-        <a href="" class="search-result-item flex items-center gap-4 p-4">
-            <div class="w-24 h-24 flex-shrink-0">
-                <img src="" alt="" class="w-full h-full object-cover rounded-lg search-result-image">
-            </div>
-            <div class="flex-1">
-                <h3 class="font-bold text-gray-800 mb-1 leading-tight search-result-title"></h3>
-                <p class="text-sm text-gray-500 mb-2 search-result-date"></p>
-                <p class="text-sm text-gray-600 leading-relaxed search-result-description"></p>
-            </div>
-        </a>
-    </template>
-</Layout>
+  <template id="result-item-template">
+    <a href="" class="search-result-item flex items-center gap-4 p-4">
+      <div class="w-24 h-24 flex-shrink-0">
+        <img src="" alt="" class="w-full h-full object-cover rounded-lg search-result-image">
+      </div>
+      <div class="flex-1">
+        <h3 class="font-bold text-gray-800 mb-1 leading-tight search-result-title"></h3>
+        <p class="text-sm text-gray-500 mb-2 search-result-date"></p>
+        <p class="text-sm text-gray-600 leading-relaxed search-result-description"></p>
+      </div>
+    </a>
+  </template>
 
-<script type="ts">
-  import Fuse from 'fuse.js';
+  <!-- ✅ CDNからFuse.jsを読み込み -->
+  <script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
 
-  const searchInput = document.getElementById('search-input');
-if (!(searchInput instanceof HTMLInputElement)) throw new Error('not found');
+  <!-- ✅ inline scriptでは import 文を使わない -->
+  <script is:inline>
+    window.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('search-input');
+      const resultsContainer = document.getElementById('search-results');
+      const itemTemplate = document.getElementById('result-item-template');
 
-const resultsContainer = document.getElementById('search-results');
-if (!(resultsContainer instanceof HTMLElement)) throw new Error('not found');
+      if (!(searchInput instanceof HTMLInputElement)) throw new Error('search-input not found');
+      if (!(resultsContainer instanceof HTMLElement)) throw new Error('search-results not found');
+      if (!(itemTemplate instanceof HTMLTemplateElement)) throw new Error('result-item-template not found');
 
-const itemTemplate = document.getElementById('result-item-template');
-if (!(itemTemplate instanceof HTMLTemplateElement)) throw new Error('not found');
+      let fuse;
 
-  let fuse;
-
-    // 1. 全記事データをAPIから非同期で取得
-    fetch('/api/search.json')
-        .then(response => response.json())
+      fetch('/api/search.json')
+        .then(res => res.json())
         .then(data => {
-            // 2. Fuse.jsを初期化
-            const options = {
-                keys: ['title', 'description','body'], // titleとdescriptionを検索対象にする
-                includeScore: true,
-                threshold: 0.4, // あいまい度のしきい値
-            };
-            fuse = new Fuse(data, options);
-        });
+          console.log("✅ fetched data", data);
 
-    // 3. 検索ボックスに入力があるたびにイベント発火
-    searchInput.addEventListener('input', (e) => {
-        const query = (e.target as HTMLInputElement).value;
-        
-        // 結果表示エリアをクリア
-        resultsContainer.innerHTML = '';
+          fuse = new Fuse(data, {
+            keys: ['title', 'description','body','tags'],
+            includeScore: true,
+            threshold: 0.4
+          });
 
-        if (query.length < 2 || !fuse) {
-            return; // 2文字未満または準備ができていなければ何もしない
-        }
-        
-        // 4. Fuse.jsで検索を実行
-        const results = fuse.search(query);
-        
-        // 5. 検索結果を画面に描画
-        results.forEach(result => {
-            const post = result.item;
-            
-            const clone = itemTemplate.content.cloneNode(true) as DocumentFragment;
-            const link = clone.querySelector('a')!;
-            link.href = `/posts/${post.slug}`;
-            
-            const image = clone.querySelector('.search-result-image') as HTMLImageElement;
-            image.src = post.image || '/images/default.jpg';
-            image.alt = post.title;
+          searchInput.addEventListener('input', (e) => {
+            const query = e.target?.value || '';
+            resultsContainer.innerHTML = '';
 
-            clone.querySelector('.search-result-title')!.textContent = post.title;
-            clone.querySelector('.search-result-date')!.textContent = `Published on ${new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'long', day: 'numeric' }).format(new Date(post.pubDate))}`;
-            clone.querySelector('.search-result-description')!.textContent = post.description;
+            if (query.length < 2 || !fuse) return;
 
-            resultsContainer.appendChild(clone);
-        });
+            const results = fuse.search(query);
+            console.log("🔍 query:", query);
+            console.log("🔍 results:", results);
+
+            results.forEach(result => {
+              const post = result.item;
+              const clone = itemTemplate.content.cloneNode(true);
+              const link = clone.querySelector('a');
+              if (link) link.href = `/posts/${post.slug}`;
+              const image = clone.querySelector('.search-result-image');
+              if (image) {
+                image.src = post.image || '/images/default.jpg';
+                image.alt = post.title;
+              }
+              const titleElem = clone.querySelector('.search-result-title');
+              if (titleElem) titleElem.textContent = post.title;
+              const dateElem = clone.querySelector('.search-result-date');
+              if (dateElem) {
+                dateElem.textContent = `Published on ${new Date(post.pubDate).toLocaleDateString('en-US')}`;
+              }
+              const descElem = clone.querySelector('.search-result-description');
+              if (descElem) descElem.textContent = post.description;
+              resultsContainer.appendChild(clone);
+            });
+          });
+        })
+        .catch(err => console.error("❌ Fuse init error:", err));
     });
-</script>
+  </script>
+</Layout>

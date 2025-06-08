@@ -1,82 +1,52 @@
 ---
+// ファイル: src/pages/posts/[slug].astro
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
-import PageHeader from '../../components/PageHeader.astro';
-import { Image } from 'astro:assets';
+import Icon from '../../components/Icon.astro';
+import Markdown from '../../components/Markdown.astro'; // Markdown対応している場合のみ
 
-// 1. このページが対応する全ての記事のパスを生成
+// ✅ 動的ルーティング用に getStaticPaths を追加
 export async function getStaticPaths() {
-  const allPosts = await getCollection('posts');
-  return allPosts.map(post => ({
+  const posts = await getCollection('posts');
+  return posts.map(post => ({
     params: { slug: post.slug },
-    props: { post },
   }));
 }
 
-// 2. Astroは渡されたpropsから特定の記事データを取り出す
-const { post } = Astro.props;
-const { Content } = await post.render();
-const formattedDate = new Intl.DateTimeFormat('en-US', { 
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
-}).format(post.data.pubDate);
+const { slug } = Astro.params;
+const post = await getCollection('posts').then(posts =>
+  posts.find((p) => p.slug === slug)
+);
+if (!post) throw new Error(`Post not found for slug: ${slug}`);
 ---
+
 <Layout title={post.data.title}>
-    <PageHeader title="" /> {/* ヘッダーは戻るボタンのみ */}
-    <article class="px-6 py-8 prose prose-lg max-w-none">
-        {/* 記事ヘッダー */}
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold mb-2">{post.data.title}</h1>
-            <p class="text-gray-500">
-                By {post.data.author}・Published on {formattedDate}
-            </p>
-        </div>
+  <!-- ✅ カバー画像（トップに全面表示） -->
+  {post.data.image && (
+    <img
+      src={post.data.image}
+      alt={post.data.title}
+      class="w-full h-64 sm:h-80 object-cover"
+    />
+  )}
 
-        {/* Markdown本文と画像 */}
-        <Content />
-    </article>
+  <article class="max-w-3xl mx-auto px-4 py-8">
+    <!-- ✅ タイトル -->
+    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{post.data.title}</h1>
 
-    {/* --- コメントセクション --- */}
-    {/* 注意: これはUIのみです。実際の投稿機能には外部サービスが必要です */}
-    <section class="px-6 py-8 border-t">
-        <h2 class="text-2xl font-bold mb-6">Comments</h2>
-        <div class="space-y-6">
-            {/* サンプルコメント1 */}
-            <div class="flex items-start gap-3">
-                <img src="https://i.pravatar.cc/40?u=ethan" alt="Ethan Bennett" class="w-10 h-10 rounded-full" />
-                <div>
-                    <p class="font-semibold">Ethan Bennett <span class="text-gray-400 font-normal text-sm">2 days ago</span></p>
-                    <p>This is so inspiring! I've always wanted to try solo travel but was hesitant. Your experience has given me the courage to plan my own adventure.</p>
-                </div>
-            </div>
-            {/* サンプルコメント2 */}
-            <div class="flex items-start gap-3">
-                <img src="https://i.pravatar.cc/40?u=sophia" alt="Sophia Carter" class="w-10 h-10 rounded-full" />
-                <div>
-                    <p class="font-semibold">Sophia Carter <span class="text-gray-400 font-normal text-sm">1 day ago</span></p>
-                    <p>Iceland sounds like the perfect place for a solo trip. The landscapes must be incredible. Thanks for sharing your story!</p>
-                </div>
-            </div>
-        </div>
-        {/* コメント入力フォーム */}
-        <div class="mt-8 flex items-center gap-3">
-            <img src="https://i.pravatar.cc/40?u=currentuser" alt="Your avatar" class="w-10 h-10 rounded-full" />
-            <input type="text" placeholder="Add a comment..." class="w-full rounded-full border-gray-300 py-2 px-4 focus:ring-2 focus:ring-gray-400">
-        </div>
-    </section>
+    <!-- ✅ 著者・日付 -->
+    <p class="text-sm text-gray-500 mb-6">
+      By {post.data.author ?? 'Anonymous'} ・ Published on
+      {post.data.pubDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })}
+    </p>
+
+    <!-- ✅ 本文 -->
+    <div class="prose prose-gray max-w-none text-[17px] leading-relaxed">
+      <Markdown content={post.body} />
+    </div>
+  </article>
 </Layout>
-
-<style is:global>
-    /* AstroのProseプラグインでMarkdownの見た目を自動で整える */
-    .prose h1, .prose h2, .prose h3 {
-        color: #333;
-    }
-    .prose p {
-        color: #4a4a4a;
-        line-height: 1.7;
-    }
-    .prose img {
-        border-radius: 0.5rem;
-    }
-</style>
