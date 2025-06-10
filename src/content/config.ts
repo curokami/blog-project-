@@ -11,6 +11,7 @@ const postsCollection = defineCollection({
     image: z.string().optional(), 
     tags: z.array(z.string()).optional(),
     body: z.string().optional(), // 本文を追加
+    draft: z.boolean().optional(), 
   }),
 });
 

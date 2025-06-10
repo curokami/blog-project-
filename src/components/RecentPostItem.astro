@@ -1,17 +1,21 @@
 ---
 interface Props {
-    title: string;
-    description: string;
-    imageUrl: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  readingTime: number; // ✅ 追加
 }
-const { title, description, imageUrl } = Astro.props;
+
+const { title, description, imageUrl, readingTime } = Astro.props;
 ---
+
 <div class="flex items-center gap-4 px-6 mb-6">
-    <div class="flex-1">
-        <h3 class="font-bold text-gray-800 mb-1">{title}</h3>
-        <p class="text-sm text-gray-600 leading-relaxed">{description}</p>
-    </div>
-    <div class="w-24 h-24 flex-shrink-0">
-        <img src={imageUrl} alt={title} class="w-full h-full object-cover rounded-lg">
-    </div>
+  <div class="flex-1">
+    <h3 class="font-bold text-gray-800 mb-1">{title}</h3>
+    <p class="text-sm text-gray-600 leading-relaxed">{description}</p>
+    <p class="text-sm text-gray-400">{readingTime} min read</p> <!-- ✅ 追加 -->
+  </div>
+  <div class="w-24 h-24 flex-shrink-0">
+    <img src={imageUrl} alt={title} class="w-full h-full object-cover rounded-lg" />
+  </div>
 </div>

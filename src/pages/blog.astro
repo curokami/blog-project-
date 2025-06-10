@@ -7,6 +7,7 @@ import Footer from '../components/Footer.astro';
 import { getCollection } from 'astro:content';
 
 const posts = await getCollection('posts');
+const visiblePosts = posts.filter(post => post.data.draft !== true);
 ---
 
 <Layout title="Blog">

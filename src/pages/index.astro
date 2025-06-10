@@ -4,44 +4,51 @@ import Header from '../components/Header.astro';
 import FeaturedPost from '../components/FeaturedPost.astro';
 import RecentPostItem from '../components/RecentPostItem.astro';
 import Footer from '../components/Footer.astro';
+import { getCollection } from 'astro:content';
 
-// ダミーデータ
-const recentPosts = [
-    {
-        title: "Embracing Change: A New Chapter",
-        description: "Moving forward with optimism and embracing new opportunities.",
-        imageUrl: "https://images.pexels.com/photos/2101836/pexels-photo-2101836.jpeg?auto=compress&cs=tinysrgb&w=800"
-    },
-    {
-        title: "Finding Balance in a Busy World",
-        description: "Tips for managing stress and maintaining a healthy work-life balance.",
-        imageUrl: "https://images.pexels.com/photos/3771089/pexels-photo-3771089.jpeg?auto=compress&cs=tinysrgb&w=800"
-    },
-    {
-        title: "The Power of Positive Thinking",
-        description: "How a positive mindset can transform your life and help you achieve your goals.",
-        imageUrl: "https://images.pexels.com/photos/7645366/pexels-photo-7645366.jpeg?auto=compress&cs=tinysrgb&w=800"
-    }
-];
+const posts = await getCollection('posts');
+
+// ドラフトを除外し、公開日の新しい順にソート
+const visiblePosts = posts
+  .filter(post => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
+
+// ✅ 各記事に読み時間を計算して追加
+const calculateReadingTime = (text) => {
+  const words = text.split(/\s+/).length;
+  return Math.max(1, Math.ceil(words / 400)); // 1分未満でも1分と表示
+};
+
+const enrichedPosts = visiblePosts.map(post => ({
+  ...post,
+  readingTime: calculateReadingTime(post.body)
+}));
+
+const [latestPost, ...recentPosts] = enrichedPosts;
 ---
 
 <Layout title="My Blog">
-	<main>
-		<Header />
-		<FeaturedPost />
-		
-		<section class="px-6 mb-4">
-			<h2 class="text-xl font-bold text-gray-800">Recent Posts</h2>
-		</section>
+  <main>
+    <Header />
 
-		{recentPosts.map(post => (
-			<RecentPostItem 
-				title={post.title} 
-				description={post.description} 
-				imageUrl={post.imageUrl} 
-			/>
-		))}
+    <!-- ✅ 修正: readingTime を FeaturedPost に渡す -->
+    <FeaturedPost post={latestPost} readingTime={latestPost.readingTime} />
 
-		<Footer activePage="home" />
-	</main>
+    <section class="px-6 mb-4">
+      <h2 class="text-xl font-bold text-gray-800">Recent Posts</h2>
+    </section>
+
+    {recentPosts.map(post => (
+      <a href={`/posts/${post.slug}`} class="block hover:opacity-80 transition">
+        <RecentPostItem 
+          title={post.data.title}
+          description={post.data.description}
+          imageUrl={post.data.image ?? '/images/default.jpg'}
+          readingTime={post.readingTime}
+        />
+      </a>
+    ))}
+
+    <Footer activePage="home" />
+  </main>
 </Layout>

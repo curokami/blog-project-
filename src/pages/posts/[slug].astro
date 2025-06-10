@@ -8,19 +8,31 @@ import Markdown from '../../components/Markdown.astro'; // Markdown対応して�
 // ✅ 動的ルーティング用に getStaticPaths を追加
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
-  return posts.map(post => ({
-    params: { slug: post.slug },
-  }));
+  return posts
+    .filter((post) => post.data.draft !== true) // ✅ ドラフトを除外
+    .map(post => ({
+      params: { slug: post.slug },
+    }));
 }
 
 const { slug } = Astro.params;
 const post = await getCollection('posts').then(posts =>
   posts.find((p) => p.slug === slug)
 );
-if (!post) throw new Error(`Post not found for slug: ${slug}`);
+
+// ✅ ドラフトは表示させない
+if (!post || post.data.draft) {
+  throw new Error(`Post not found or is draft: ${slug}`);
+}
 ---
 
 <Layout title={post.data.title}>
+
+  <!-- ✅ 戻るボタン -->
+  <a href="/blog" class="inline-flex items-center text-sm text-blue-600 hover:underline px-4 pt-4">
+    ← Back to Blog
+  </a>  
+
   <!-- ✅ カバー画像（トップに全面表示） -->
   {post.data.image && (
     <img

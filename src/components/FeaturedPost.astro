@@ -1,8 +1,20 @@
-<div class="px-6 mb-8">
+---
+// ファイル: src/components/FeaturedPost.astro
+interface Props {
+  post: any;
+  readingTime: number; // ✅ 追加
+}
+
+const { post, readingTime } = Astro.props; // ✅ 修正
+---
+
+<a href={`/posts/${post.slug}`} class="block hover:opacity-90 transition">
+  <div class="px-6 mb-8">
     <div class="relative w-full h-48 rounded-lg overflow-hidden mb-4">
-        <img src="https://images.pexels.com/photos/1761279/pexels-photo-1761279.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2" alt="A person walking towards the sun" class="w-full h-full object-cover">
+      <img src={post.data.image ?? '/images/default.jpg'} alt={post.data.title} class="w-full h-full object-cover" />
     </div>
-    <h2 class="text-xl font-bold text-gray-800 mb-1">The Journey of Self-Discovery</h2>
-    <p class="text-gray-600 mb-2">Reflecting on my personal growth and the lessons learned along the way.</p>
-    <p class="text-sm text-gray-400">5 min read</p>
-</div>
+    <h2 class="text-xl font-bold text-gray-800 mb-1">{post.data.title}</h2>
+    <p class="text-gray-600 mb-2">{post.data.description}</p>
+    <p class="text-sm text-gray-400">{readingTime} min read</p>
+  </div>
+</a>
