@@ -2,17 +2,16 @@
 import Icon from './Icon.astro';
 
 interface Props {
-    activePage: 'home' | 'search' | 'create' | 'notifications' | 'profile';
+    activePage: 'home' | 'search' | 'tag' | 'profile';
 }
 const { activePage } = Astro.props;
 
 // アイコン設定
 const navItems = [
     { name: 'home', label: 'Home', href: '/' },
-    { name: 'search', label: 'Search', href: '/search' },
-    { name: 'create', label: 'Create', href: '#' },
-    { name: 'notifications', label: 'Notifications', href: '#'},
-    { name: 'profile', label: 'Profile', href: '#' },
+    { name: 'search', label: 'Blog', href: '/blog' },
+    { name: 'tag', label: 'Tags', href: '/tags' },
+    { name: 'profile', label: 'Profile', href: '/profile' },
 ];
 ---
 
@@ -22,17 +21,6 @@ const navItems = [
             const isActive = activePage === item.name;
             const iconColor = isActive ? 'text-gray-900' : 'text-gray-400';
             
-            // Createボタンは特別扱い
-            if (item.name === 'create') {
-                return (
-                    <a href={item.href} class="p-3 bg-gray-800 text-white rounded-full -translate-y-4 shadow-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-6 h-6">
-                            <path fill-rule="evenodd" d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z" clip-rule="evenodd" />
-                        </svg>
-                    </a>
-                )
-            }
-
             return (
                 <a href={item.href} class={`flex flex-col items-center gap-1 ${iconColor}`} aria-label={item.label}>
                     <Icon name={item.name} className="w-6 h-6" />
