@@ -14,6 +14,7 @@ interface TagFilterProps {
   allTags: string[];
 }
 
+// TagFilter UI component with interactive tag-based post filtering
 export default function TagFilter({ posts, allTags }: TagFilterProps) {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
