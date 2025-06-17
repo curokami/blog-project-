@@ -1,7 +1,0 @@
----
-import SearchFilter from './SearchFilter';
-import type { Post } from './SearchFilter';
-const { posts }: { posts: Post[] } = Astro.props;
----
-
-<SearchFilter posts={posts} client:load />
