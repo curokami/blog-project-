@@ -1,11 +1,7 @@
 ---
-import Icon from './Icon.astro';
+import SearchFilter from './SearchFilter';
+import type { Post } from './SearchFilter';
+const { posts }: { posts: Post[] } = Astro.props;
 ---
-<div class="px-4 py-2 space-y-4">
-    <div class="relative">
-        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-            <Icon name="search" className="w-5 h-5 text-gray-400" />
-        </div>
-        <input type="search" placeholder="Search posts" class="w-full rounded-lg border-none bg-gray-100 py-2.5 pl-10 pr-4 text-gray-800 focus:ring-2 focus:ring-gray-300">
-    </div>
-</div>
+
+<SearchFilter posts={posts} client:load />
