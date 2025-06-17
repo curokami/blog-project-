@@ -30,9 +30,10 @@ export default function TagFilter({ posts, allTags }: TagFilterProps) {
             key={tag}
             class={`px-4 py-1 rounded-full text-sm font-semibold ${
               tag === selectedTag
-                ? 'bg-gray-800 text-white'
-                : 'bg-gray-200 text-gray-600'
+                 ?  'text-white'
+                 : 'bg-gray-200 text-gray-600'
             }`}
+            style={tag === selectedTag ? { backgroundColor: '#76aacc' } : {}}
             onClick={() => setSelectedTag(tag)}
           >
             {tag}
