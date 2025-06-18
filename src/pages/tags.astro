@@ -2,6 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
 import TagFilter from '../components/TagFilter.tsx';
+import Footer from '../components/Footer.astro';
+import PageHeader from '../components/PageHeader.astro';
+
 
 const posts = await getCollection('posts');
 
@@ -11,9 +14,10 @@ const tags = Array.from(
 ---
 
 <Layout title="Tags">
+<PageHeader title="Tags" />
   <main class="px-4 py-6">
-    <h1 class="text-2xl font-bold mb-4 text-center">Tags</h1>
 
     <TagFilter posts={posts} allTags={tags} client:load/>
   </main>
+    <Footer activePage="tag" />
 </Layout>
