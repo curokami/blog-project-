@@ -4,6 +4,7 @@ import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
 import Icon from '../../components/Icon.astro';
 import Markdown from '../../components/Markdown.astro'; // Markdown対応している場合のみ
+import BackButton from '../../components/BackButton.tsx'; // 👈 追加
 
 // ✅ 動的ルーティング用に getStaticPaths を追加
 export async function getStaticPaths() {
@@ -29,11 +30,7 @@ if (!post || post.data.draft) {
 <Layout title={post.data.title}>
 
   <!-- ✅ 戻るボタン -->
-<a href="/blog" class="inline-flex items-center text-gray-600 hover:text-gray-800 transition px-4 py-4">
-  <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-  </svg>
-</a>
+<BackButton client:load />
 
 
   <!-- ✅ カバー画像（トップに全面表示） -->
