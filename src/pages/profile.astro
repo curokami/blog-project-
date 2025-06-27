@@ -1,74 +1,77 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import Footer from '../components/Footer.astro';
+import PageHeader from '../components/PageHeader.astro';
 import Icon from '../components/Icon.astro';
 ---
 
 <html lang="en">
   <head>
-    <title>Profile</title>
+   <Layout title="Profile"></Layout>
+   <PageHeader title="Profile" />
+
+
     <meta charset="UTF-8" />
   </head>
   <body class="bg-[#F9F9F9] font-sans text-[#333]">
 
-    <!-- 戻るアイコン -->
-    <header class="flex items-center justify-between p-4">
-      <button>
-        <Icon name="arrow-left" className="w-6 h-6 text-gray-800" />
-      </button>
-    </header>
 
     <main class="px-4 py-6 text-center">
       <!-- プロフィール画像 -->
       <div class="flex justify-center">
-       <img src="/images/profile.jpeg" alt="Profile picture" class="w-32 h-32 rounded-full" />
+        <img src="/images/profile.jpeg" alt="Profile picture" class="w-32 h-32 rounded-full" />
       </div>
 
       <!-- 名前 & 肩書き -->
-      <h1 class="text-xl font-bold mt-4">Alex Turner</h1>
-      <p class="text-sm text-gray-500">Author & Narrator</p>
-      <p class="text-sm text-gray-500 mt-1">Sharing my journey and insights with a global audience.</p>
+      <h1 class="text-xl font-bold mt-4">suihan</h1>
+      <p class="text-sm text-gray-500">難破船船長</p>
+      <p class="text-sm text-gray-500 mt-1">
+        
+      </p>
 
       <!-- About Me -->
-      <section class="mt-6 text-left">
-        <h2 class="text-md font-bold">About Me</h2>
+      <section class="mt-6 text-left px-4 max-w-md mx-auto">
+      <h2 class="text-lg font-semibold text-center">About Me</h2> 
         <p class="mt-1 text-sm">
-          I'm an author and narrator dedicated to sharing personal experiences and insights.
-          This platform is a space for connection and exploration through the power of words.
+            こんにちは！suihanです。このブログ、ナンパ船の作者であり、日々の生活や趣味について書いています。ここでは、私の考えや経験を共有し、皆さんとつながることを楽しみにしています。
         </p>
       </section>
 
       <!-- SNSリンク -->
-      <section class="mt-6 text-left">
+      <section class="mt-6 text-center">
         <h2 class="text-md font-bold">Connect</h2>
-        <ul class="mt-2 space-y-2">
-          <li class="flex items-center space-x-3">
-            <div class="bg-gray-100 rounded-full p-2">
-              <Icon name="rss" className="w-5 h-5" />
-            </div>
-            <span>Twitter</span>
+        <ul class="mt-4 space-y-4">
+          <li class="flex justify-center items-center space-x-2">
+            <a href="https://twitter.com/your_handle" target="_blank" rel="noopener noreferrer" class="flex items-center space-x-2">
+              <div class="bg-gray-100 rounded-full p-2">
+                <Icon name="twitter" className="w-5 h-5" />
+              </div>
+              <span>Twitter</span>
+            </a>
           </li>
-          <li class="flex items-center space-x-3">
-            <div class="bg-gray-100 rounded-full p-2">
-              <Icon name="rss" className="w-5 h-5" />
-            </div>
-            <span>Instagram</span>
-          </li>
-          <li class="flex items-center space-x-3">
-            <div class="bg-gray-100 rounded-full p-2">
-              <Icon name="rss" className="w-5 h-5" />
-            </div>
-            <span>GitHub</span>
+          <li class="flex justify-center items-center space-x-2">
+            <a href="https://instagram.com/your_handle" target="_blank" rel="noopener noreferrer" class="flex items-center space-x-2">
+              <div class="bg-gray-100 rounded-full p-2">
+                <Icon name="Instagram" className="w-5 h-5" />
+              </div>
+              <span>Instagram</span>
+            </a>
+          <ii I
+          <li class="flex justify-center items-center space-x-2">
+            <a href="https://github.com/your_handle" target="_blank" rel="noopener noreferrer" class="flex items-center space-x-2">
+              <div class="bg-gray-100 rounded-full p-2">
+                <Icon name="github" className="w-5 h-5" />
+              </div>
+              <span>GitHub</span>
+            </a>
           </li>
         </ul>
       </section>
     </main>
 
+
     <!-- フッター -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-white shadow p-4 flex justify-around">
-      <Icon name="home" />
-      <Icon name="search" />
-      <Icon name="plus" />
-      <Icon name="profile-solid" />
-    </footer>
+  <Footer activePage="profile" />
 
   </body>
 </html>
