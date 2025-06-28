@@ -5,73 +5,42 @@ import PageHeader from '../components/PageHeader.astro';
 import Icon from '../components/Icon.astro';
 ---
 
-<html lang="en">
-  <head>
-   <Layout title="Profile"></Layout>
-   <PageHeader title="Profile" />
+<Layout title="プロフィール">
+    <PageHeader title="" />
+  <main class="px-4 py-6 text-center">
+    <h1 class="text-2xl font-bold mb-4">Profile</h1>
+    <div class="flex justify-center">
+      <img
+        src="/images/profile.jpeg"
+        alt="プロフィール画像"
+        class="w-32 h-32 rounded-full shadow-md"
+      />
+    </div>
+    <h2 class="mt-4 text-xl font-semibold">suihan</h2>
+    <p class="text-sm text-gray-500">難破船船長</p>
 
+    <h3 class="mt-6 text-lg font-semibold text-center">About Me</h3>
+    <p class="mt-2 max-w-md mx-auto text-sm">
+      こんにちは！suihanです。このブログ、ナンパ船のオーナーです。ここでは、私の考えや経験を共有し、皆さんとつながることを楽しみにしています。
+    </p>
 
-    <meta charset="UTF-8" />
-  </head>
-  <body class="bg-[#F9F9F9] font-sans text-[#333]">
-
-
-    <main class="px-4 py-6 text-center">
-      <!-- プロフィール画像 -->
-      <div class="flex justify-center">
-        <img src="/images/profile.jpeg" alt="Profile picture" class="w-32 h-32 rounded-full" />
-      </div>
-
-      <!-- 名前 & 肩書き -->
-      <h1 class="text-xl font-bold mt-4">suihan</h1>
-      <p class="text-sm text-gray-500">難破船船長</p>
-      <p class="text-sm text-gray-500 mt-1">
-        
-      </p>
-
-      <!-- About Me -->
-      <section class="mt-6 text-left px-4 max-w-md mx-auto">
-      <h2 class="text-lg font-semibold text-center">About Me</h2> 
-        <p class="mt-1 text-sm">
-            こんにちは！suihanです。このブログ、ナンパ船の作者であり、日々の生活や趣味について書いています。ここでは、私の考えや経験を共有し、皆さんとつながることを楽しみにしています。
-        </p>
-      </section>
-
-      <!-- SNSリンク -->
-      <section class="mt-6 text-center">
-        <h2 class="text-md font-bold">Connect</h2>
-        <ul class="mt-4 space-y-4">
-          <li class="flex justify-center items-center space-x-2">
-            <a href="https://twitter.com/your_handle" target="_blank" rel="noopener noreferrer" class="flex items-center space-x-2">
-              <div class="bg-gray-100 rounded-full p-2">
-                <Icon name="twitter" className="w-5 h-5" />
-              </div>
-              <span>Twitter</span>
-            </a>
-          </li>
-          <li class="flex justify-center items-center space-x-2">
-            <a href="https://instagram.com/your_handle" target="_blank" rel="noopener noreferrer" class="flex items-center space-x-2">
-              <div class="bg-gray-100 rounded-full p-2">
-                <Icon name="Instagram" className="w-5 h-5" />
-              </div>
-              <span>Instagram</span>
-            </a>
-          <ii I
-          <li class="flex justify-center items-center space-x-2">
-            <a href="https://github.com/your_handle" target="_blank" rel="noopener noreferrer" class="flex items-center space-x-2">
-              <div class="bg-gray-100 rounded-full p-2">
-                <Icon name="github" className="w-5 h-5" />
-              </div>
-              <span>GitHub</span>
-            </a>
-          </li>
-        </ul>
-      </section>
-    </main>
-
-
-    <!-- フッター -->
-  <Footer activePage="profile" />
-
-  </body>
-</html>
+    <h3 class="mt-8 text-lg font-semibold">Connect</h3>
+    <!-- ✅ ここを縦並びに変更 -->
+<div class="flex flex-col items-center gap-4 bg-white p-4 rounded-lg shadow-md max-w-xs mx-auto">
+  <a href="https://twitter.com" class="flex items-center justify-center gap-2 text-gray-800 hover:text-blue-500">
+    <Icon name="twitter" className="w-5 h-5" />
+    <span>Twitter</span>
+  </a>
+  <a href="https://instagram.com" class="flex items-center justify-center gap-2 text-gray-800 hover:text-pink-500">
+    <Icon name="instagram" className="w-5 h-5" />
+    <span>Instagram</span>
+  </a>
+  <a href="https://github.com" class="flex items-center justify-center gap-2 text-gray-800 hover:text-gray-900">
+    <Icon name="github" className="w-5 h-5" />
+    <span>GitHub</span>
+  </a>
+</div>
+  </main>
+   <Footer activePage="profile" />
+     
+</Layout>
