@@ -38,16 +38,18 @@ const [latestPost, ...recentPosts] = enrichedPosts;
       <h2 class="text-xl font-bold text-gray-800">Recent Posts</h2>
     </section>
 
-    {recentPosts.map(post => (
-      <a href={`/posts/${post.slug}`} class="block hover:opacity-80 transition">
-        <RecentPostItem 
-          title={post.data.title}
-          description={post.data.description}
-          imageUrl={post.data.image ?? '/images/default.jpg'}
-          readingTime={post.readingTime}
-        />
-      </a>
-    ))}
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 mb-10">
+  {recentPosts.map(post => (
+    <a href={`/posts/${post.slug}`} class="hover:opacity-80 transition">
+      <RecentPostItem 
+        title={post.data.title}
+        description={post.data.description}
+        imageUrl={post.data.image ?? '/images/default.jpg'}
+        readingTime={post.readingTime}
+      />
+    </a>
+  ))}
+</section>
 
     <Footer activePage="home" />
   </main>
