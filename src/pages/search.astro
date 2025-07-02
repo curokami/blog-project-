@@ -3,12 +3,14 @@ import Layout from '../layouts/Layout.astro';
 import PageHeader from '../components/PageHeader.astro';
 import Footer from '../components/Footer.astro';
 import Icon from '../components/Icon.astro';
+import Header from '../components/Header.astro';
 ---
 
 <Layout title="Search">
+  
   <PageHeader title="Search" />
 
-  <main class="px-4 py-2">
+  <main class="px-4 py-2 md:px-8 md:py-6 max-w-4xl mx-auto">
     <div class="relative mb-4">
       <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
         <Icon name="search" className="w-5 h-5 text-gray-400" />
@@ -17,7 +19,7 @@ import Icon from '../components/Icon.astro';
     </div>
 
     <h2 class="text-xl font-bold mb-2">Results</h2>
-    <div id="search-results" class="divide-y divide-gray-100"></div>
+    <div id="search-results" class="grid gap-4 divide-y divide-gray-100 md:grid-cols-2 lg:grid-cols-3"></div>
   </main>
 
   <Footer activePage="search" />
@@ -71,6 +73,14 @@ import Icon from '../components/Icon.astro';
             const results = fuse.search(query);
             console.log("🔍 query:", query);
             console.log("🔍 results:", results);
+
+            if (results.length === 0) {
+              const noResultMessage = document.createElement('p');
+              noResultMessage.className = 'text-gray-500 text-center';
+              noResultMessage.textContent = 'No results found.';
+              resultsContainer.appendChild(noResultMessage);
+              return;
+            }
 
             results.forEach(result => {
               const post = result.item;
