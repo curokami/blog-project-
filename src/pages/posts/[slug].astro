@@ -2,15 +2,13 @@
 // ファイル: src/pages/posts/[slug].astro
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
-import Icon from '../../components/Icon.astro';
-import Markdown from '../../components/Markdown.astro'; // Markdown対応している場合のみ
-import BackButton from '../../components/BackButton.tsx'; // 👈 追加
+import BackButton from '../../components/BackButton.tsx';
 
-// ✅ 動的ルーティング用に getStaticPaths を追加
+// 動的ルーティング用に getStaticPaths を追加
 export async function getStaticPaths() {
   const posts = await getCollection('posts');
   return posts
-    .filter((post) => post.data.draft !== true) // ✅ ドラフトを除外
+    .filter((post) => post.data.draft !== true) // ドラフトを除外
     .map(post => ({
       params: { slug: post.slug },
     }));
@@ -21,19 +19,15 @@ const post = await getCollection('posts').then(posts =>
   posts.find((p) => p.slug === slug)
 );
 
-// ✅ ドラフトは表示させない
+// ドラフトは表示させない
 if (!post || post.data.draft) {
   throw new Error(`Post not found or is draft: ${slug}`);
 }
 ---
 
 <Layout title={post.data.title}>
+  <BackButton client:load />
 
-  <!-- ✅ 戻るボタン -->
-<BackButton client:load />
-
-
-  <!-- ✅ カバー画像（トップに全面表示） -->
   {post.data.image && (
     <img
       src={post.data.image}
@@ -43,11 +37,11 @@ if (!post || post.data.draft) {
   )}
 
   <article class="max-w-3xl mx-auto px-4 py-8">
-    <!-- ✅ タイトル -->
-    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{post.data.title}</h1>
+    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-2">
+      {post.data.title}
+    </h1>
 
-    <!-- ✅ 著者・日付 -->
-    <p class="text-sm text-gray-500 mb-6">
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
       By {post.data.author ?? 'Anonymous'} ・ Published on
       {post.data.pubDate.toLocaleDateString('en-US', {
         year: 'numeric',
@@ -56,9 +50,11 @@ if (!post || post.data.draft) {
       })}
     </p>
 
-    <!-- ✅ 本文 -->
-    <div class="prose prose-gray max-w-none text-[17px] leading-relaxed">
-      <Markdown content={post.body} />
-    </div>
+    {/* ▼▼▼ 本文の表示部分 ▼▼▼ */}
+    <div
+      class="prose prose-gray dark:prose-invert max-w-none text-[17px] leading-relaxed"
+      set:html={post.body}
+    />
+    
   </article>
 </Layout>

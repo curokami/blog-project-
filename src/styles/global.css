@@ -1,1 +1,58 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------- */
+/* サイト全体のカラーテーマ定義       */
+/* ---------------------------------- */
+
+:root {
+  /* --- ライトモード --- */
+  --color-bg: #ffffff;             /* 背景: 白 */
+  --color-text-base: #374151;      /* 本文: やや濃いグレー (gray-700) */
+  --color-text-heading: #111827;   /* 見出し: 黒に近いグレー (gray-900) */
+  --color-accent: #c2410c;         /* アクセント: 濃いオレンジ (orange-600) */
+  --color-accent-hover: #9a3412;   /* アクセント(ホバー): さらに濃いオレンジ (orange-700) */
+  --color-card-bg: #ffffff;        /* カード背景: 白 */
+  --color-card-border: #e5e7eb;   /* カード境界線: 薄いグレー (gray-200) */
+}
+
+html.dark {
+  /* --- ダークモード --- */
+  --color-bg: #111827;
+  --color-text-base: #d1d5db;
+  --color-text-heading: #f9fafb;
+  --color-accent: #f59e0b;         /* アクセント: アンバー (amber-400) */
+  /* ▼▼▼ この行の値を変更 ▼▼▼ */
+  --color-accent-hover: #d97706;   /* アクセント(ホバー): 濃いアンバー (amber-500) に変更 */
+  /* ▲▲▲ 変更ここまで ▲▲▲ */
+  --color-card-bg: #1f2937;
+  --color-card-border: #374151;
+}
+
+/* ---------------------------------- */
+/* 基本要素へのテーマ適用             */
+/* ---------------------------------- */
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-base);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-text-heading);
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+.prose a {
+  text-decoration: underline;
+}

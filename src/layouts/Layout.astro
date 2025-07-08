@@ -1,5 +1,6 @@
 ---
-import '../styles/global.css';
+import '../styles/global.css'
+import ToggleTheme from '../components/ToggleTheme';
 import SearchModal from '../components/SearchModal';
 
 interface Props {
@@ -24,8 +25,9 @@ const { title } = Astro.props;
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
 	</head>
-	<body class="bg-[#F9F9F9] font-poppins text-[#333]">
+	<body class="bg-[#F9F9F9] text-[#333] dark:bg-[#1e1e1e] dark:text-white font-poppins">
 		<slot />
+		<ToggleTheme client:only="preact" />
 		<SearchModal client:only="preact" />
 	</body>
 </html>
