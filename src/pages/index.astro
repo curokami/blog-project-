@@ -1,6 +1,5 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Header from '../components/Header.astro';
 import FeaturedPost from '../components/FeaturedPost.astro';
 import RecentPostItem from '../components/RecentPostItem.astro';
 import Footer from '../components/Footer.astro';
@@ -13,7 +12,7 @@ const visiblePosts = posts
   .filter(post => !post.data.draft)
   .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime());
 
-// ✅ 各記事に読み時間を計算して追加
+// 各記事に読み時間を計算して追加
 const calculateReadingTime = (text) => {
   const words = text.split(/\s+/).length;
   return Math.max(1, Math.ceil(words / 400)); // 1分未満でも1分と表示
@@ -29,27 +28,25 @@ const [latestPost, ...recentPosts] = enrichedPosts;
 
 <Layout title="ナンパ船">
   <main>
-    <Header />
+    <FeaturedPost post={latestPost} />
 
-    <!-- ✅ 修正: readingTime を FeaturedPost に渡す -->
-    <FeaturedPost post={latestPost} readingTime={latestPost.readingTime} />
-
-    <section class="px-6 mb-4">
-      <h2 class="text-xl font-bold text-gray-800">Recent Posts</h2>
+    <section class="px-6 pt-10 mb-4">
+      <h2 class="text-xl font-bold text-gray-800 dark:text-white">Recent Posts</h2>
     </section>
 
-<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 mb-10">
-  {recentPosts.map(post => (
-    <a href={`/posts/${post.slug}`} class="hover:opacity-80 transition">
-      <RecentPostItem 
-        title={post.data.title}
-        description={post.data.description}
-        imageUrl={post.data.image ?? '/images/default.jpg'}
-        readingTime={post.readingTime}
-      />
-    </a>
-  ))}
-</section>
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 mb-10">
+      {recentPosts.map(post => (
+        // ▼▼▼ この部分を完全に書き換えてください ▼▼▼
+        <RecentPostItem
+          url={`/posts/${post.slug}`}
+          title={post.data.title}
+          description={post.data.description}
+          imageUrl={post.data.image ?? '/images/default.jpg'}
+          readingTime={post.readingTime}
+        />
+        // ▲▲▲ 修正ここまで ▲▲▲
+      ))}
+    </section>
 
     <Footer activePage="home" />
   </main>

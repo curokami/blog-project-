@@ -1,20 +1,39 @@
 ---
 // ファイル: src/components/FeaturedPost.astro
+import type { CollectionEntry } from 'astro:content';
+
 interface Props {
   post: any;
-  readingTime: number; // ✅ 追加
 }
 
-const { post, readingTime } = Astro.props; // ✅ 修正
+const { post } = Astro.props;
 ---
+{/* 1. カード全体をリンクにし、グループとして定義 */}
+<a href={`/posts/${post.slug}/`} class="group block mb-12">
 
-<a href={`/posts/${post.slug}`} class="block hover:opacity-90 transition">
-  <div class="px-6 mb-8">
-    <div class="relative w-full h-48 rounded-lg overflow-hidden mb-4">
-      <img src={post.data.image ?? '/images/default.jpg'} alt={post.data.title} class="w-full h-full object-cover" />
-    </div>
-    <h2 class="text-xl font-bold text-gray-800 mb-1">{post.data.title}</h2>
-    <p class="text-gray-600 mb-2">{post.data.description}</p>
-    <p class="text-sm text-gray-400">{readingTime} min read</p>
+  {/* 2. 画像をカードの上部に配置 */}
+  <div class="overflow-hidden rounded-lg shadow-lg mb-4">
+    {post.data.image && (
+      <img
+        src={post.data.image}
+        alt={post.data.title}
+        class="w-full h-auto object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+        loading="eager"
+      />
+    )}
+  </div>
+
+  {/* 3. テキストコンテンツを下に配置 */}
+  <div>
+    {/* 4. タイトルはオフホワイト、ホバー時のみアクセントカラー */}
+    <h2
+      class="text-2xl sm:text-3xl font-bold text-[var(--color-text-heading)] transition-colors group-hover:text-[var(--color-accent)]"
+    >
+      {post.data.title}
+    </h2>
+    {/* 5. 説明文は基本の文字色 */}
+    <p class="mt-2 text-lg text-[var(--color-text-base)]">
+      {post.data.description}
+    </p>
   </div>
 </a>

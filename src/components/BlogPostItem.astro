@@ -1,19 +1,89 @@
 ---
+// ファイル: src/components/BlogPostItem.astro
 interface Props {
-    category: string;
-    title: string;
-    description: string;
-    imageUrl: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  readingTime: number;
+  url: string;
 }
-const { category, title, description, imageUrl } = Astro.props;
+const { title, description, imageUrl, readingTime, url } = Astro.props;
 ---
-<div class="flex items-center gap-4 px-4 py-4">
-    <div class="flex-1">
-        <p class="text-sm font-semibold text-gray-500 mb-1">{category}</p>
-        <h3 class="font-bold text-lg text-gray-800 mb-1 leading-tight">{title}</h3>
-        <p class="text-sm text-gray-600 leading-relaxed">{description}</p>
+<a href={url} class="post-card">
+  {imageUrl && (
+    <div class="post-card-image-wrapper">
+      <img
+        src={imageUrl}
+        alt={title}
+        class="post-card-image"
+        loading="lazy"
+      />
     </div>
-    <div class="w-28 h-28 flex-shrink-0">
-        <img src={imageUrl} alt={title} class="w-full h-full object-cover rounded-lg">
-    </div>
-</div>
+  )}
+  <div class="post-card-text">
+    <h3 class="post-card-title">{title}</h3>
+    <p class="post-card-description">{description}</p>
+    <p class="post-card-meta">{readingTime} min read</p>
+  </div>
+</a>
+
+<style>
+  /* --- Component Structure & Layout --- */
+  .post-card {
+    display: block;
+    text-decoration: none;
+    color: inherit; /* グローバルなリンク色を継承しないようにする */
+    transition: transform 0.2s ease-in-out;
+  }
+  .post-card:hover {
+    transform: translateY(-4px);
+  }
+  .post-card-image-wrapper {
+    aspect-ratio: 16 / 9;
+    margin-bottom: 0.75rem;
+  }
+  .post-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.5rem;
+  }
+
+  /* --- Text Styling (Light Mode) --- */
+  .post-card-title {
+    font-size: 1.125rem; /* text-lg */
+    line-height: 1.75rem;
+    font-weight: 600; /* font-semibold */
+    color: #1f2937; /* gray-800 */
+    transition: color 0.2s ease-in-out;
+  }
+  .post-card-description {
+    margin-top: 0.25rem;
+    font-size: 0.875rem; /* text-sm */
+    line-height: 1.25rem;
+    color: #4b5563; /* gray-600 */
+  }
+  .post-card-meta {
+    margin-top: 0.5rem;
+    font-size: 0.75rem; /* text-xs */
+    line-height: 1rem;
+    color: #6b7280; /* gray-500 */
+  }
+  .post-card:hover .post-card-title {
+    color: #3b82f6; /* blue-500 */
+  }
+
+  /* --- Dark Mode Overrides --- */
+  :global(html.dark) .post-card-title {
+    color: #e5e7eb !important; /* gray-200 */
+  }
+  :global(html.dark) .post-card-description {
+    color: #9ca3af !important; /* gray-400 */
+  }
+  :global(html.dark) .post-card-meta {
+    color: #6b7280 !important; /* gray-500 */
+  }
+  :global(html.dark) .post-card:hover .post-card-title {
+    color: #ffffff !important; /* white */
+  }
+</style>
