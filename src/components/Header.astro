@@ -17,24 +17,24 @@ const navLinks = [
   <div class="max-w-5xl mx-auto">
     <nav class="flex items-center justify-between">
       {/* 左側: サイトタイトル */}
-      <a href="/" class="text-xl font-bold text-[var(--color-text-heading)] no-underline hover:text-[var(--color-accent)] transition-colors">
-        ナンパ船
+      <a href="/">
+        <img src="/images/nanpa_1001.png" alt="ナンパ船" class="h-8 w-auto" />
       </a>
 
       {/* 右側全体 */}
       <div class="flex items-center gap-6">
-        {/* ▼▼▼ ナビゲーションリンク + RSSを4アイコン分左に移動 ▼▼▼ */}
-        <ul class="hidden sm:flex items-center gap-6 -translate-x-16">
+        {/* ▼▼▼ ナビゲーションリンク + RSSを4アイコン分左に、1アイコン分上に移動 ▼▼▼ */}
+        <ul class="hidden sm:flex items-center gap-6 -translate-x-16 -translate-y-5">
           {navLinks.map(link => (
             <li>
               <a
                 href={link.href}
-                class:list=[
+                class:list={[
                   "text-sm font-medium no-underline transition-colors",
                   activePage === link.key
                     ? "text-[var(--color-accent)]"
                     : "text-[var(--color-text-base)] hover:text-[var(--color-accent)]"
-                ]
+                ]}
               >
                 {link.label}
               </a>
