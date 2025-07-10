@@ -1,13 +1,21 @@
 ---
+// ファイル: src/layouts/Layout.astro
 import '../styles/global.css'
-import ToggleTheme from '../components/ToggleTheme';
+import Header from '../components/Header.astro'; // 👈 1. Headerコンポーネントをインポート
 import SearchModal from '../components/SearchModal';
+// ToggleThemeはHeader内で呼び出されるので、ここでは不要になる場合がありますが、
+// 他で使っている可能性を考慮して残しておきます。
+import ToggleTheme from '../components/ToggleTheme.tsx';
 
+
+// 2. activePageプロパティを受け取れるようにPropsを修正
 interface Props {
 	title: string;
+  activePage?: 'home' | 'tags' | 'profile';
 }
 
-const { title } = Astro.props;
+// 3. Astro.propsからactivePageを取り出す
+const { title, activePage } = Astro.props;
 ---
 
 <!doctype html>
@@ -20,14 +28,19 @@ const { title } = Astro.props;
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 
-        {/* Google Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+    {/* Google Fonts */}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
 	</head>
-	<body class="bg-[#F9F9F9] text-[#333] dark:bg-[#1e1e1e] dark:text-white font-poppins">
+    
+	<body class="bg-[var(--color-bg)] text-[var(--color-text-base)] font-poppins">
+    {/* 5. bodyの先頭で、共通ヘッダーを呼び出す。activePageを渡す */}
+    <Header activePage={activePage} />
+
 		<slot />
-		<ToggleTheme client:only="preact" />
+
+    {/* SearchModalはbodyの最後に配置するのが一般的です */}
 		<SearchModal client:only="preact" />
 	</body>
 </html>

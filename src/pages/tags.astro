@@ -14,10 +14,12 @@ const tags = Array.from(
 );
 ---
 
-<Layout title="Tags">
+<Layout title="Tags" activePage="tags">
+  {/* ... */}
  
  <PageHeader title="Tags" />
   <main class="px-4 py-6">
+
 
     <TagFilter posts={posts} allTags={tags} client:load/>
   </main>

@@ -1,17 +1,60 @@
 ---
+import ToggleTheme from './ToggleTheme.tsx';
 import Icon from './Icon.astro';
----
 
-<header class="flex flex-wrap justify-between items-center px-6 py-4">
-  <h1 class="text-2xl font-bold text-gray-800">ナンパ船</h1>
-  <div class="flex items-center gap-4">
-    <nav class="hidden md:flex gap-6 text-sm text-gray-600">
-      <a href="/" class="hover:text-black">Home</a>
-      <a href="/tags" class="hover:text-black">Tags</a>
-      <a href="/profile" class="hover:text-black">Profile</a>
+interface Props {
+  activePage?: 'home' | 'tags' | 'profile';
+}
+const { activePage } = Astro.props;
+
+const navLinks = [
+  { href: '/', label: 'Home', key: 'home' },
+  { href: '/tags', label: 'Tags', key: 'tags' },
+  { href: '/profile', label: 'Profile', key: 'profile' },
+];
+---
+<header class="px-6 py-4">
+  <div class="max-w-5xl mx-auto">
+    <nav class="flex items-center justify-between">
+      {/* 左側: サイトタイトル */}
+      <a href="/" class="text-xl font-bold text-[var(--color-text-heading)] no-underline hover:text-[var(--color-accent)] transition-colors">
+        ナンパ船
+      </a>
+
+      {/* 右側全体 */}
+      <div class="flex items-center gap-6">
+        {/* ▼▼▼ ナビゲーションリンク + RSSを4アイコン分左に移動 ▼▼▼ */}
+        <ul class="hidden sm:flex items-center gap-6 -translate-x-16">
+          {navLinks.map(link => (
+            <li>
+              <a
+                href={link.href}
+                class:list=[
+                  "text-sm font-medium no-underline transition-colors",
+                  activePage === link.key
+                    ? "text-[var(--color-accent)]"
+                    : "text-[var(--color-text-base)] hover:text-[var(--color-accent)]"
+                ]
+              >
+                {link.label}
+              </a>
+            </li>
+          ))}
+          <li>
+            <a
+              href="/rss.xml"
+              aria-label="RSS Feed"
+              target="_blank"
+              class="text-[var(--color-text-base)] hover:text-[var(--color-accent)] transition-colors"
+            >
+              <Icon name="rss" className="w-5 h-5" />
+            </a>
+          </li>
+        </ul>
+
+        {/* トグルスイッチを独立配置（右端） */}
+        <ToggleTheme client:load />
+      </div>
     </nav>
-    <a href="/rss.xml" aria-label="RSS Feed" class="flex items-center">
-      <Icon name="rss" className="w-6 h-6 text-gray-700" />
-    </a>
   </div>
 </header>
