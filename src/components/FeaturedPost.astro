@@ -12,12 +12,12 @@ const { post } = Astro.props;
 <a href={`/posts/${post.slug}/`} class="group block mb-12">
 
   {/* 2. 画像をカードの上部に配置 */}
-  <div class="overflow-hidden rounded-lg shadow-lg mb-4">
+  <div class="overflow-hidden rounded-lg shadow-lg mb-4 max-w-3xl mx-auto aspect-video">
     {post.data.image && (
       <img
         src={post.data.image}
         alt={post.data.title}
-        class="w-full h-auto object-cover"
+        class="w-full h-full object-contain"
         loading="eager"
       />
     )}
