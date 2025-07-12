@@ -9,7 +9,7 @@
 :root {
   /* --- ライトモード --- */
   --color-bg: #ffffff;
-  --color-text-base: #374151;      /* 本文: やや濃いグレー (gray-700) */
+  --color-text-base: #ffffff;      /* 本文: 白 */
   --color-text-heading: #111827;   /* 見出し: 黒に近いグレー (gray-900) */
   --color-accent: #c2410c;         /* アクセント: 濃いオレンジ (orange-600) */
   --color-accent-hover: #9a3412;   /* アクセント(ホバー): さらに濃いオレンジ (orange-700) */
@@ -20,7 +20,7 @@
 html.dark {
   /* --- ダークモード --- */
   --color-bg: #111827;
-  --color-text-base: #d1d5db;      /* 本文: 明るいグレー (gray-300) */
+  --color-text-base: #ffffff;      /* 本文: 白 */
   /* ▼▼▼ この行の値を、より落ち着いたライトグレーに変更します ▼▼▼ */
   --color-text-heading: #e5e7eb;   /* 見出し: ライトグレー (gray-200) に変更 */
   /* ▲▲▲ 変更ここまで ▲▲▲ */

@@ -9,10 +9,10 @@ interface Props {
 const { post } = Astro.props;
 ---
 {/* 1. カード全体をリンクにし、グループとして定義 */}
-<a href={`/posts/${post.slug}/`} class="group block mb-12">
+<a href={`/posts/${post.slug}/`} class="group block mb-12 max-w-3xl mx-auto">
 
   {/* 2. 画像をカードの上部に配置 */}
-  <div class="overflow-hidden rounded-lg shadow-lg mb-4 max-w-3xl mx-auto aspect-video">
+  <div class="overflow-hidden rounded-lg shadow-lg mb-4 aspect-video">
     {post.data.image && (
       <img
         src={post.data.image}
