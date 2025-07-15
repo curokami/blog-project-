@@ -23,7 +23,7 @@ export default function ToggleTheme() {
   return (
     <button
       onClick={toggleTheme}
-      class="fixed top-4 right-4 z-50 p-2 rounded bg-gray-200 dark:bg-gray-700"
+      class="fixed top-4 right-4 z-50 p-2 rounded bg-[#111827] dark:bg-gray-700"
       aria-label="Toggle theme"
     >
       {isDark ? '☀️' : '🌙'}
