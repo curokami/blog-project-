@@ -11,8 +11,8 @@
   --color-bg: #ffffff;
   --color-text-base: #ffffff;      /* 本文: 白 */
   --color-text-heading: #111827;   /* 見出し: 黒に近いグレー (gray-900) */
-  --color-accent: #c2410c;         /* アクセント: 濃いオレンジ (orange-600) */
-  --color-accent-hover: #9a3412;   /* アクセント(ホバー): さらに濃いオレンジ (orange-700) */
+  --color-accent: #3b82f6;         /* アクセント: 青 (blue-500) */
+  --color-accent-hover: #2563eb;   /* アクセント(ホバー): 濃い青 (blue-600) */
   --color-card-bg: #ffffff;
   --color-card-border: #e5e7eb;
 }
@@ -24,8 +24,8 @@ html.dark {
   /* ▼▼▼ この行の値を、より落ち着いたライトグレーに変更します ▼▼▼ */
   --color-text-heading: #e5e7eb;   /* 見出し: ライトグレー (gray-200) に変更 */
   /* ▲▲▲ 変更ここまで ▲▲▲ */
-  --color-accent: #f59e0b;
-  --color-accent-hover: #d97706;
+  --color-accent: #3b82f6;
+  --color-accent-hover: #2563eb;
   --color-card-bg: #1f2937;
   --color-card-border: #374151;
 }
