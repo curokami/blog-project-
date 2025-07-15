@@ -19,26 +19,26 @@ import Header from '../components/Header.astro'; // ✅ 追加
         class="w-24 h-24 rounded-full shadow-md"
       />
     </div>
-    <h2 class="mt-4 text-xl font-semibold">suihan</h2>
-    <p class="text-sm text-gray-500">難破船船長</p>
+    <h2 class="mt-4 text-xl font-semibold text-blue-500">suihan</h2>
+    <p class="text-sm text-blue-500">難破船船長</p>
 
-    <h3 class="mt-6 text-lg font-semibold text-center">About Me</h3>
-    <p class="mt-2 max-w-md mx-auto text-sm">
+    <h3 class="mt-6 text-lg font-semibold text-center text-blue-500">About Me</h3>
+    <p class="mt-2 max-w-md mx-auto text-sm text-blue-500">
       ナンパ船船長suihanです。ここでは私の考えや経験を共有します。
     </p>
 
-    <h3 class="mt-8 text-lg font-semibold">Connect</h3>
+    <h3 class="mt-8 text-lg font-semibold text-blue-500">Connect</h3>
     <!-- ✅ ここを縦並びに変更 -->
-<div class="flex flex-col items-center gap-4 bg-[#F9F9F9] p-4 rounded-lg max-w-xs mx-auto">
-  <a href="https://twitter.com" class="flex items-center justify-center gap-2 text-gray-800 hover:text-blue-500">
-    <Icon name="twitter" className="w-5 h-5" />
+<div class="flex flex-col items-center gap-4 bg-[var(--color-card-bg)] p-4 rounded-lg max-w-xs mx-auto mt-4">
+  <a href="https://twitter.com" class="flex items-center justify-center gap-2 text-[var(--color-text-heading)] hover:text-blue-500">
+    <Icon name="x-twitter" className="w-5 h-5" />
     <span>Twitter</span>
   </a>
-  <a href="https://instagram.com" class="flex items-center justify-center gap-2 text-gray-800 hover:text-pink-500">
+  <a href="https://instagram.com" class="flex items-center justify-center gap-2 text-[var(--color-text-heading)] hover:text-blue-500">
     <Icon name="instagram" className="w-5 h-5" />
     <span>Instagram</span>
   </a>
-  <a href="https://github.com" class="flex items-center justify-center gap-2 text-gray-800 hover:text-gray-900">
+  <a href="https://github.com" class="flex items-center justify-center gap-2 text-[var(--color-text-heading)] hover:text-blue-500">
     <Icon name="github" className="w-5 h-5" />
     <span>GitHub</span>
   </a>

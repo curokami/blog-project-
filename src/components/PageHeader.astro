@@ -8,8 +8,8 @@ const { title } = Astro.props;
 ---
 <header class="flex items-center justify-between p-4">
     <a href="/" aria-label="Back" class="md:hidden">
-        <Icon name="arrow-left" className="w-6 h-6 text-gray-800" />
+        <Icon name="arrow-left" className="w-6 h-6 text-[var(--color-text-heading)]" />
     </a>
-    <h1 class="text-xl font-bold text-gray-800 absolute left-1/2 -translate-x-1/2">{title}</h1>
+    <h1 class="text-xl font-bold text-blue-500 absolute left-1/2 -translate-x-1/2">{title}</h1>
     <div class="w-6 h-6"></div>
 </header>
