@@ -6,12 +6,13 @@ import SearchModal from '../components/SearchModal';
 // ToggleThemeはHeader内で呼び出されるので、ここでは不要になる場合がありますが、
 // 他で使っている可能性を考慮して残しておきます。
 import ToggleTheme from '../components/ToggleTheme.tsx';
+import Footer from '../components/Footer.astro';
 
 
 // 2. activePageプロパティを受け取れるようにPropsを修正
 interface Props {
 	title: string;
-  activePage?: 'home' | 'tags' | 'profile';
+  activePage?: 'home' | 'tags' | 'profile' | 'search' | 'tag';
 }
 
 // 3. Astro.propsからactivePageを取り出す
@@ -42,6 +43,9 @@ const { title, activePage } = Astro.props;
 
     {/* SearchModalはbodyの最後に配置するのが一般的です */}
 		<SearchModal client:only="preact" />
+
+    {/* フッターをbodyの最後に配置 */}
+    <Footer activePage={activePage} />
 	</body>
 </html>
 <style is:global>
