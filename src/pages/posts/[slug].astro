@@ -23,6 +23,8 @@ const post = await getCollection('posts').then(posts =>
 if (!post || post.data.draft) {
   throw new Error(`Post not found or is draft: ${slug}`);
 }
+
+const { Content } = await post.render();
 ---
 
 <Layout title={post.data.title}>
@@ -53,8 +55,9 @@ if (!post || post.data.draft) {
     {/* ▼▼▼ 本文の表示部分 ▼▼▼ */}
     <div
       class="prose prose-gray dark:prose-invert max-w-none text-[17px] leading-relaxed"
-      set:html={post.body}
-    />
+    >
+      <Content />
+    </div>
     
   </article>
 </Layout>
