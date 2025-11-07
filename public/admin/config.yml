@@ -1,6 +1,6 @@
 backend:
   name: github
-  repo: curokami/astro_newblog # 必須: あなたのGitHubリポジトリ名に書き換えてください (例: ayame/astro_newblog)
+  repo: curokami/blog-project-  # 必須: あなたのGitHubリポジトリ名に書き換えてください (例: ayame/astro_newblog)
   branch: main # ブログのメインブランチ名
   base_url: https://blog-auth.suihan.workers.dev # あなたのWorkerのURL
 
