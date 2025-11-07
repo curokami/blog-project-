@@ -1,0 +1,22 @@
+backend:
+  name: github
+  repo: your-github-username/your-repo-name # 必須: あなたのGitHubリポジトリ名に書き換えてください (例: ayame/astro_newblog)
+  branch: main # ブログのメインブランチ名
+
+media_folder: "public/images"
+public_folder: "/images"
+
+collections:
+  - name: "posts"
+    label: "ブログ記事"
+    folder: "src/content/posts"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    fields:
+      - { label: "タイトル", name: "title", widget: "string" }
+      - { label: "公開日", name: "pubDate", widget: "datetime" }
+      - { label: "著者", name: "author", widget: "string" }
+      - { label: "概要", name: "description", widget: "text" }
+      - { label: "画像", name: "image", widget: "image" }
+      - { label: "タグ", name: "tags", widget: "list", allow_add: true }
+      - { label: "本文", name: "body", widget: "markdown" }
