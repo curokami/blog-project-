@@ -1,21 +1,18 @@
----
-import { v4 as uuid } from "uuid";
+export const onRequestGet = async ({ request, env }) => {
+  const url = new URL(request.url);
+  const { site_id } = url.searchParams;
+  const state = JSON.stringify({ site_id, random: Math.random().toString(36).slice(2) });
 
-export const onRequest: PagesFunction = async ({ request, env, next }) => {
-  const state = uuid();
-  const url = new URL("https://github.com/login/oauth/authorize");
+  const authUrl = new URL("https://github.com/login/oauth/authorize");
+  authUrl.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
+  authUrl.searchParams.set("scope", "repo");
+  authUrl.searchParams.set("state", state);
 
-  url.searchParams.set("client_id", env.GITHUB_CLIENT_ID as string);
-  url.searchParams.set("scope", "repo");
-  url.searchParams.set("state", state);
-
-  const response = new Response(null, {
+  return new Response(null, {
     status: 302,
     headers: {
-      location: url.toString(),
-      "Set-Cookie": `state=${state}; HttpOnly; Path=/; Max-Age=600`,
+      "Set-Cookie": `__Host-state=${state}; Secure; HttpOnly; SameSite=Lax; Path=/`,
+      Location: authUrl.toString(),
     },
   });
-
-  return response;
 };

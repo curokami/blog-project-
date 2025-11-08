@@ -1,65 +1,53 @@
----
-export const onRequest: PagesFunction = async ({ request, env, next }) => {
+export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
-  const code = url.searchParams.get("code");
-  const state = url.searchParams.get("state");
+  const { code, state } = url.searchParams;
 
-  const cookie = request.headers.get("Cookie");
-  const cookieState = cookie
-    ?.split(";")
-    .find((c) => c.trim().startsWith("state="))
-    ?.split("=")[1];
-
-  if (state !== cookieState) {
-    return new Response("State mismatch", { status: 401 });
+  const storedState = request.headers.get("Cookie")?.match(/__Host-state=([^;]+)/)?.[1];
+  if (!storedState || storedState !== state) {
+    return new Response("State mismatch", { status: 400 });
   }
 
-  const response = await fetch(
-    "https://github.com/login/oauth/access_token",
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "user-agent": "decap-cms-cloudflare-pages",
-        accept: "application/json",
-      },
-      body: JSON.stringify({
-        client_id: env.GITHUB_CLIENT_ID,
-        client_secret: env.GITHUB_CLIENT_SECRET,
-        code,
-      }),
-    }
-  );
+  const { site_id } = JSON.parse(storedState);
+
+  const response = await fetch("https://github.com/login/oauth/access_token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({
+      client_id: env.GITHUB_CLIENT_ID,
+      client_secret: env.GITHUB_CLIENT_SECRET,
+      code,
+    }),
+  });
 
   const result = await response.json();
 
   const html = `
     <!DOCTYPE html>
     <html lang="en">
-      <head>
-        <meta charset="utf-8" />
-        <title>Authorizing ...</title>
-      </head>
+      <head><meta charset="utf-8" /></head>
       <body>
         <script>
           const receiveMessage = (message) => {
-            window.opener.postMessage(
-              'authorization:github:success:${JSON.stringify(result)}',
-              message.origin
-            );
-            window.removeEventListener("message", receiveMessage, false);
+            if (message.data.auth) {
+              window.opener.postMessage(
+                'authorization:github:success:${JSON.stringify(result)}',
+                message.origin
+              );
+            }
           }
           window.addEventListener("message", receiveMessage, false);
-          window.opener.postMessage("authorizing:github", "*");
+          window.opener.postMessage({ auth: "github" }, "*");
         </script>
       </body>
-    </html>
-  `;
+    </html>`;
 
   return new Response(html, {
     headers: {
       "Content-Type": "text/html",
-      "Set-Cookie": `state=; HttpOnly; Path=/; Max-Age=0`,
+      "Set-Cookie": `__Host-state=; Secure; HttpOnly; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
     },
   });
 };
