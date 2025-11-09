@@ -1,18 +1,27 @@
 export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
-  const { code, state } = url.searchParams;
+  const code = url.searchParams.get("code");
+  const stateFromGithub = url.searchParams.get("state"); // Get state from GitHub redirect
 
-  const storedState = request.headers.get("Cookie")?.match(/__Host-state=([^;]+)/)?.[1];
-  if (!storedState || storedState !== state) {
-    return new Response("State mismatch", { status: 400 });
+  // Read the __Host-state cookie
+  const stateCookie = request.headers.get("Cookie")
+    ?.split('; ')
+    .find(row => row.startsWith('__Host-state='))
+    ?.split('=')[1];
+
+  // Log for debugging
+  console.log("callback.js: GITHUB_CLIENT_ID:", env.GITHUB_CLIENT_ID);
+  console.log("callback.js: stateFromGithub:", stateFromGithub);
+  console.log("callback.js: stateCookie:", stateCookie);
+
+  // State verification
+  if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
+    return new Response("State mismatch or missing state information.", { status: 403 });
   }
 
-  const { site_id } = JSON.parse(storedState);
-
-  console.log("callback.js: GITHUB_CLIENT_ID:", env.GITHUB_CLIENT_ID);
-  console.log("callback.js: GITHUB_CLIENT_SECRET:", env.GITHUB_CLIENT_SECRET);
-
-  console.log("callback.js: GITHUB_CLIENT_ID:", env.GITHUB_CLIENT_ID);
+  if (!code) {
+    return new Response("Missing code", { status: 400 });
+  }
 
   const response = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
@@ -29,30 +38,36 @@ export const onRequestGet = async ({ request, env }) => {
 
   const result = await response.json();
 
-  const html = `
+  if (result.error) {
+    return new Response(result.error_description || result.error, {
+      status: 401,
+    });
+  }
+
+  // This part sends the token back to the CMS in the opener window
+  return new Response(
+    `
     <!DOCTYPE html>
-    <html lang="en">
-      <head><meta charset="utf-8" /></head>
+    <html>
+      <head>
+        <title>Auth Callback</title>
+      </head>
       <body>
         <script>
-          const receiveMessage = (message) => {
-            if (message.data.auth) {
-              window.opener.postMessage(
-                'authorization:github:success:${JSON.stringify(result)}',
-                message.origin
-              );
-            }
-          }
-          window.addEventListener("message", receiveMessage, false);
-          window.opener.postMessage({ auth: "github" }, "*");
+          window.opener.postMessage(
+            {
+              token: "${result.access_token}",
+              provider: "github",
+            },
+            window.location.origin
+          );
+          window.close();
         </script>
       </body>
-    </html>`;
-
-  return new Response(html, {
-    headers: {
-      "Content-Type": "text/html",
-      "Set-Cookie": `__Host-state=; Secure; HttpOnly; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
-    },
-  });
+    </html>
+    `,
+    {
+      headers: { "Content-Type": "text/html" },
+    }
+  );
 };
