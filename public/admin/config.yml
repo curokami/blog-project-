@@ -5,8 +5,10 @@ backend:
   base_url: https://blog-project-398.pages.dev
   auth_endpoint: api/auth
 
-# media_folder: "public/images"
-# public_folder: "/images"
+media_folder: "public/images"
+public_folder: "/images"
+media_library:
+  name: "git"
 
 collections:
   - name: "posts"
