@@ -7,8 +7,6 @@ backend:
 
 media_folder: "public/images"
 public_folder: "/images"
-media_library:
-  name: "git"
 
 collections:
   - name: "posts"
