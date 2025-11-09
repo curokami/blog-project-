@@ -9,6 +9,11 @@ export const onRequestGet = async ({ request, env }) => {
 
   const { site_id } = JSON.parse(storedState);
 
+  console.log("callback.js: GITHUB_CLIENT_ID:", env.GITHUB_CLIENT_ID);
+  console.log("callback.js: GITHUB_CLIENT_SECRET:", env.GITHUB_CLIENT_SECRET);
+
+  console.log("callback.js: GITHUB_CLIENT_ID:", env.GITHUB_CLIENT_ID);
+
   const response = await fetch("https://github.com/login/oauth/access_token", {
     method: "POST",
     headers: {

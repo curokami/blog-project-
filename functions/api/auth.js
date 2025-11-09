@@ -1,8 +1,10 @@
 export const onRequestGet = async ({ request, env }) => {
+  console.log("auth.js: GITHUB_CLIENT_ID:", env.GITHUB_CLIENT_ID);
   const url = new URL(request.url);
   const { site_id } = url.searchParams;
   const state = JSON.stringify({ site_id, random: Math.random().toString(36).slice(2) });
 
+  console.log("auth.js: GITHUB_CLIENT_ID:", env.GITHUB_CLIENT_ID);
   const authUrl = new URL("https://github.com/login/oauth/authorize");
   authUrl.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
   authUrl.searchParams.set("scope", "repo");
