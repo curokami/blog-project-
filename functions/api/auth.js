@@ -8,7 +8,7 @@ export const onRequestGet = async ({ request, env }) => {
   const authUrl = new URL("https://github.com/login/oauth/authorize");
   authUrl.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
   authUrl.searchParams.set("scope", "repo");
-  authUrl.searchParams.set("state", state);
+  url.searchParams.set("state", new URL(request.url).searchParams.get("state"));
 
   return new Response(null, {
     status: 302,
