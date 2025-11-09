@@ -3,7 +3,7 @@ backend:
   repo: curokami/blog-project-
   branch: main
   base_url: https://blog-project-398.pages.dev
-  auth_endpoint: api/auth
+  auth_endpoint: https://blog-auth.suihan.workers.dev/auth
 
 media_folder: "public/images"
 public_folder: "/images"
