@@ -1,20 +1,13 @@
 export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const stateFromGithub = url.searchParams.get("state"); // Get state from GitHub redirect
+  const stateFromGithub = url.searchParams.get("state");
 
-  // Read the __Host-state cookie
   const stateCookie = request.headers.get("Cookie")
     ?.split('; ')
     .find(row => row.startsWith('__Host-state='))
     ?.split('=')[1];
 
-  // Log for debugging
-  console.log("callback.js: GITHUB_CLIENT_ID:", env.GITHUB_CLIENT_ID);
-  console.log("callback.js: stateFromGithub:", stateFromGithub);
-  console.log("callback.js: stateCookie:", stateCookie);
-
-  // State verification
   if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
     return new Response("State mismatch or missing state information.", { status: 403 });
   }
@@ -44,7 +37,6 @@ export const onRequestGet = async ({ request, env }) => {
     });
   }
 
-  // This part sends the token back to the CMS in the opener window
   return new Response(
     `
     <!DOCTYPE html>
@@ -54,20 +46,27 @@ export const onRequestGet = async ({ request, env }) => {
       </head>
       <body>
         <script>
-          window.opener.postMessage(
-            {
-              token: "${result.access_token}",
-              provider: "github",
-            },
-            window.location.origin
-          );
+          const payload = {
+              payload: {
+                  token: "${result.access_token}", 
+                  provider: "github"
+              },
+              event: 'authenticate',
+              name: 'github'
+          };
+          
+          const targetOrigin = window.opener.location.origin;
+          window.opener.postMessage(payload, targetOrigin);
           window.close();
         </script>
       </body>
     </html>
     `,
     {
-      headers: { "Content-Type": "text/html" },
+      headers: { 
+        "Content-Type": "text/html",
+        "Set-Cookie": `__Host-state=; Secure; HttpOnly; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+      },
     }
   );
 };
