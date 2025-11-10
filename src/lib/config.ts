@@ -1,0 +1,33 @@
+// src/lib/config.ts
+import type { CmsConfig } from "decap-cms-app";
+
+const config: CmsConfig = {
+  backend: {
+    name: "github",
+    repo: "curokami/blog-project-",
+    branch: "main",
+    base_url: "https://blog-project-398.pages.dev",
+  },
+  media_folder: "public/images",
+  public_folder: "/images",
+  collections: [
+    {
+      name: "posts",
+      label: "ブログ記事",
+      folder: "src/content/posts",
+      create: true,
+      slug: "{{year}}-{{month}}-{{day}}-{{slug}}",
+      fields: [
+        { label: "タイトル", name: "title", widget: "string" },
+        { label: "公開日", name: "pubDate", widget: "datetime" },
+        { label: "著者", name: "author", widget: "string" },
+        { label: "概要", name: "description", widget: "text" },
+        { label: "画像", name: "image", widget: "image" },
+        { label: "タグ", name: "tags", widget: "list", allow_add: true },
+        { label: "本文", name: "body", widget: "markdown" },
+      ],
+    },
+  ],
+};
+
+export default config;
