@@ -1,7 +1,7 @@
 export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const stateFromGithub = url.searchParams.get("state"); 
+  const stateFromGithub = url.searchParams.get("state");
 
   const stateCookie = request.headers.get("Cookie")
     ?.split('; ')
@@ -9,6 +9,7 @@ export const onRequestGet = async ({ request, env }) => {
     ?.split('=')[1];
 
   if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
+    console.error(`State Mismatch: GitHub: ${stateFromGithub}, Cookie: ${stateCookie}`);
     return new Response("State mismatch or missing state information.", { status: 403 });
   }
 
@@ -51,14 +52,12 @@ export const onRequestGet = async ({ request, env }) => {
               token: "${result.access_token}",
               provider: "github"
             },
-            event: 'authenticate', // Decap CMSが期待するイベント名
-            name: 'github'         // Decap CMSが期待するプロバイダー名
+            event: 'authenticate',
+            name: 'github'
           };
           
           const targetOrigin = window.opener.location.origin;
-
           window.opener.postMessage(authData, targetOrigin);
-          
           window.close();
         </script>
       </body>
