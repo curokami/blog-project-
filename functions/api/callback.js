@@ -1,13 +1,19 @@
 export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const stateFromGithub = url.searchParams.get("state");
+  const stateFromGithub = url.searchParams.get("state"); // GitHubから返されたシンプルな文字列
 
+  // Read the __Host-state cookie
   const stateCookie = request.headers.get("Cookie")
     ?.split('; ')
     .find(row => row.startsWith('__Host-state='))
     ?.split('=')[1];
 
+  // Log for debugging
+  console.log("callback.js: stateFromGithub:", stateFromGithub);
+  console.log("callback.js: stateCookie:", stateCookie);
+
+  // State verification: シンプルな文字列比較
   if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
     return new Response("State mismatch or missing state information.", { status: 403 });
   }
