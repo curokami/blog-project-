@@ -11,7 +11,7 @@
 <body>
   <script>
     // is-landを使って、クライアント側でのみCMSを初期化
-    import('~/lib/cms').then(({ initCMS }) => {
+    import('../lib/cms').then(({ initCMS }) => {
       initCMS();
     });
   </script>
