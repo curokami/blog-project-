@@ -7,6 +7,7 @@ const config: CmsConfig = {
     repo: "curokami/blog-project-",
     branch: "main",
     base_url: "https://blog-project-398.pages.dev",
+    auth_endpoint: "/api/auth",
   },
   media_folder: "public/images",
   public_folder: "/images",
