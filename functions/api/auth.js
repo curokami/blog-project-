@@ -1,20 +1,27 @@
-// functions/api/auth.js (一時的なデバッグコード)
-
+// functions/api/auth.js (最終版)
 export const onRequestGet = async ({ request, env }) => {
-    // 取得したクライアントIDの値を直接表示する
-    const clientId = env.GITHUB_CLIENT_ID || "--- CLIENT_ID NOT FOUND ---";
-    const secretStatus = env.GITHUB_CLIENT_SECRET ? "SECRET IS LOADED" : "SECRET IS MISSING";
+  if (!env.GITHUB_CLIENT_ID) {
+      return new Response("GitHub client credentials are not configured.", { status: 500 });
+  }
 
-    // GitHubへリダイレクトせずに、情報をブラウザに返す
-    return new Response(
-        `
-        <h1>OAuth Debug Info (Temporary)</h1>
-        <p>Client ID: <strong>${clientId}</strong></p>
-        <p>Client Secret Status: <strong>${secretStatus}</strong></p>
-        `,
-        {
-            status: 200,
-            headers: { "Content-Type": "text/html" }
-        }
-    );
+  const url = new URL(request.url);
+  
+  // Decap CMSが渡すstateパラメータと、ランダム文字列を結合
+  const cmsProvidedState = url.searchParams.get("state") || "no_cms_state";
+  const randomString = Math.random().toString(36).slice(2);
+  const stateData = `${cmsProvidedState}_${randomString}`; 
+
+  const authUrl = new URL("https://github.com/login/oauth/authorize");
+  authUrl.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
+  authUrl.searchParams.set("scope", "repo");
+  authUrl.searchParams.set("state", stateData); // シンプルな文字列をGitHubに渡す
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      // Cookieにも同じシンプルな文字列を保存
+      "Set-Cookie": `__Host-state=${stateData}; Secure; HttpOnly; SameSite=Lax; Path=/`,
+      Location: authUrl.toString(),
+    },
+  });
 };

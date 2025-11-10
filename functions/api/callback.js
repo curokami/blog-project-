@@ -1,19 +1,13 @@
 export const onRequestGet = async ({ request, env }) => {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const stateFromGithub = url.searchParams.get("state"); // GitHubから返されたシンプルな文字列
+  const stateFromGithub = url.searchParams.get("state"); 
 
-  // Read the __Host-state cookie
   const stateCookie = request.headers.get("Cookie")
     ?.split('; ')
     .find(row => row.startsWith('__Host-state='))
     ?.split('=')[1];
 
-  // Log for debugging
-  console.log("callback.js: stateFromGithub:", stateFromGithub);
-  console.log("callback.js: stateCookie:", stateCookie);
-
-  // State verification: シンプルな文字列比較
   if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
     return new Response("State mismatch or missing state information.", { status: 403 });
   }
@@ -57,10 +51,14 @@ export const onRequestGet = async ({ request, env }) => {
               token: "${result.access_token}",
               provider: "github"
             },
+            event: 'authenticate', // Decap CMSが期待するイベント名
+            name: 'github'         // Decap CMSが期待するプロバイダー名
           };
-
+          
           const targetOrigin = window.opener.location.origin;
+
           window.opener.postMessage(authData, targetOrigin);
+          
           window.close();
         </script>
       </body>
