@@ -9,6 +9,11 @@
   <title>Content Manager</title>
 </head>
 <body>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <script>
+    // is-landを使って、クライアント側でのみCMSを初期化
+    import('~/lib/cms').then(({ initCMS }) => {
+      initCMS();
+    });
+  </script>
 </body>
 </html>
