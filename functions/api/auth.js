@@ -8,7 +8,6 @@ export const onRequestGet = async ({ request, env }) => {
     const stateData = url.searchParams.get("state"); 
     
     if (!stateData) {
-        // CMSからstateが来ない場合は、ルーティングかconfigの問題
         return new Response("Missing required state parameter from CMS.", { status: 400 });
     }
 
