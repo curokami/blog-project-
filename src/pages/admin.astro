@@ -1,11 +1,19 @@
+---
+// src/pages/admin.astro
+---
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager</title>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
 </head>
 <body>
+  <script>
+    // is-landを使って、クライアント側でのみCMSを初期化
+    import('~/lib/cms').then(({ initCMS }) => {
+      initCMS();
+    });
+  </script>
 </body>
 </html>
