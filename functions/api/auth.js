@@ -1,25 +1,22 @@
-// functions/api/auth.js (最終版: stateをそのまま利用)
+// functions/api/auth.js (最終ロバスト版)
 export const onRequestGet = async ({ request, env }) => {
     if (!env.GITHUB_CLIENT_ID) {
         return new Response("GitHub client credentials are not configured.", { status: 500 });
     }
 
-    const url = new URL(request.url);
-    const stateData = url.searchParams.get("state"); 
-    
-    if (!stateData) {
-        return new Response("Missing required state parameter from CMS.", { status: 400 });
-    }
+    // Decap CMS が送らない state を Pages Function 側で強制的に生成する
+    const generatedState = Math.random().toString(36).slice(2) + Date.now().toString();
 
     const authUrl = new URL("https://github.com/login/oauth/authorize");
     authUrl.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
     authUrl.searchParams.set("scope", "repo");
-    authUrl.searchParams.set("state", stateData); 
+    authUrl.searchParams.set("state", generatedState); // 生成した state を GitHub に渡す
 
     return new Response(null, {
         status: 302,
         headers: {
-            "Set-Cookie": `__Host-state=${stateData}; Secure; HttpOnly; SameSite=Lax; Path=/`,
+            // 生成した state を Cookie に保存 (callback.js で検証する用)
+            "Set-Cookie": `__Host-state=${generatedState}; Secure; HttpOnly; SameSite=Lax; Path=/`,
             Location: authUrl.toString(),
         },
     });
