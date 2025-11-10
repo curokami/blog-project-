@@ -46,17 +46,15 @@ export const onRequestGet = async ({ request, env }) => {
       </head>
       <body>
         <script>
-          const payload = {
-              payload: {
-                  token: "${result.access_token}", 
-                  provider: "github"
-              },
-              event: 'authenticate',
-              name: 'github'
+          const authData = {
+            auth: {
+              token: "${result.access_token}",
+              provider: "github"
+            },
           };
-          
+
           const targetOrigin = window.opener.location.origin;
-          window.opener.postMessage(payload, targetOrigin);
+          window.opener.postMessage(authData, targetOrigin);
           window.close();
         </script>
       </body>
