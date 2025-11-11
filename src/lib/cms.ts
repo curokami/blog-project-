@@ -11,5 +11,5 @@ export function initCMS() {
   (window as any).cmsInitialized = true;
 
   CMS.registerBackend("github", CustomAuth);
-  CMS.init({ config });
+  CMS.init(config);
 }
