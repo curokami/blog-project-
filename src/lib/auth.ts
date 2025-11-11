@@ -25,7 +25,7 @@ export class CustomAuth implements CmsAuthenticationProvider {
   authCallback = (event: MessageEvent) => {
     // メッセージが 'payload' を持つ、v2互換の形式であることを期待
     if (event.data.payload) {
-      this.authPromise?.(event.data);
+      this.authPromise?.(event.data.payload);
       this.cleanup();
     }
   };
