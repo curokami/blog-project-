@@ -7,13 +7,5 @@ import preact from '@astrojs/preact';
 // https://astro.build/config
 export default defineConfig({
   output: 'static',
-  integrations: [preact(), tailwind()],
-  vite: {
-    resolve: {
-      alias: {
-        'clean-stack': '/src/lib/empty.js',
-        'node:url': '/src/lib/empty.js',
-      },
-    },
-  },
+  integrations: [preact(), tailwind()]
 });
