@@ -1,0 +1,1 @@
+// This is a dummy file to replace a node-specific module in the browser build.

@@ -9,8 +9,10 @@ export default defineConfig({
   output: 'static',
   integrations: [preact(), tailwind()],
   vite: {
-    optimizeDeps: {
-      include: ['clean-stack'],
+    resolve: {
+      alias: {
+        'clean-stack': '/src/lib/empty.js',
+      },
     },
   },
 });
