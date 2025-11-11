@@ -1,11 +1,13 @@
-// public/admin/config.js
-const config = {
+// src/lib/config.ts
+import type { CmsConfig } from "decap-cms-app";
+
+const config: CmsConfig = {
   backend: {
     name: "github",
     repo: "curokami/blog-project-",
     branch: "main",
     base_url: "https://blog-project-398.pages.dev",
-    auth_endpoint: "/api/auth", // Pages Function のパス
+    auth_endpoint: "/api/auth",
   },
   media_folder: "public/images",
   public_folder: "/images",
@@ -29,5 +31,4 @@ const config = {
   ],
 };
 
-// グローバル変数に設定を公開
-window.CMS_CONFIG = config;
+export default config;

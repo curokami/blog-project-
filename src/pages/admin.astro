@@ -7,18 +7,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager</title>
-  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
-  <script src="/admin/config.js" is:inline></script>
 </head>
 <body>
-  <script is:inline>
-    // CMS の初期化
-    if (window.CMS && window.CMS_CONFIG) {
-      // カスタム認証ハンドラーを登録
-      window.CMS.registerAuthenticationProvider(new window.CustomAuth());
-      // グローバル変数の設定でCMSを初期化
-      window.CMS.init({ config: window.CMS_CONFIG });
-    }
+  <script>
+    import('~/lib/cms').then(({ initCMS }) => {
+      initCMS();
+    });
   </script>
 </body>
 </html>
