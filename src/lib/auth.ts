@@ -1,5 +1,5 @@
 // src/lib/auth.ts
-import { CmsAuthenticationProvider } from "decap-cms-app";
+import type { CmsAuthenticationProvider } from "decap-cms-core";
 
 export class CustomAuth implements CmsAuthenticationProvider {
   private auth_url: string;
