@@ -1,4 +1,4 @@
-// functions/api/callback.js (最終版: 認証後の画面遷移を確実にする)
+// functions/api/callback.js (最終版: Decap CMS v2互換ペイロード)
 export const onRequestGet = async ({ request, env }) => {
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
@@ -48,15 +48,18 @@ export const onRequestGet = async ({ request, env }) => {
         </head>
         <body>
           <script>
-            // Decap CMS のカスタムプロキシが期待する、最もシンプルなペイロード構造
+            // Decap CMS v2 (netlify-cms) が OAuth 認証完了として認識する標準プロキシ形式
             const authData = {
-              token: "${result.access_token}", // トークンを直接ルートに配置
-              provider: "github"
+              payload: { 
+                token: "${result.access_token}", 
+                provider: "github"
+              },
+              event: 'authenticate', // 'authenticate' イベントを明示的に通知
+              name: 'github'
             };
             
             const targetOrigin = window.opener.location.origin;
 
-            // すぐに送信する
             window.opener.postMessage(authData, targetOrigin);
             window.close();
           </script>
