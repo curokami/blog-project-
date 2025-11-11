@@ -3,13 +3,12 @@ import CMS from "decap-cms-app";
 import { CustomAuth } from "./auth";
 import config from "./config";
 
-let initialized = false;
-
 export function initCMS() {
-  if (initialized) {
+  // Use a global flag to prevent re-initialization
+  if ((window as any).cmsInitialized) {
     return;
   }
-  initialized = true;
+  (window as any).cmsInitialized = true;
 
   CMS.registerBackend("github", CustomAuth);
   CMS.init({ config });
