@@ -1,4 +1,4 @@
-// functions/api/callback.js (最終版: Decap CMS v2互換ペイロード)
+// functions/api/callback.js (デバッグ強化版)
 export const onRequestGet = async ({ request, env }) => {
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
@@ -31,12 +31,28 @@ export const onRequestGet = async ({ request, env }) => {
       }),
     });
 
-    const result = await response.json();
+    // --- デバッグの強化 ---
+    const responseBody = await response.text();
+
+    if (response.status !== 200) {
+        return new Response(
+            `GitHub Token Exchange Failed (Status ${response.status}): ${responseBody}`,
+            { status: 500, headers: { "Content-Type": "text/plain" } }
+        );
+    }
+
+    const result = JSON.parse(responseBody);
+    // --- デバッグここまで ---
 
     if (result.error) {
-        return new Response(`GitHub Token Error: ${result.error_description || result.error}`, {
-            status: 401,
-        });
+        return new Response(
+            `GitHub API Error: ${result.error_description || result.error}`,
+            { status: 401, headers: { "Content-Type": "text/plain" } }
+        );
+    }
+
+    if (!result.access_token) {
+        return new Response("No access_token found in response.", { status: 500, headers: { "Content-Type": "text/plain" } });
     }
 
     return new Response(
@@ -48,13 +64,12 @@ export const onRequestGet = async ({ request, env }) => {
         </head>
         <body>
           <script>
-            // Decap CMS v2 (netlify-cms) が OAuth 認証完了として認識する標準プロキシ形式
             const authData = {
               payload: { 
                 token: "${result.access_token}", 
                 provider: "github"
               },
-              event: 'authenticate', // 'authenticate' イベントを明示的に通知
+              event: 'authenticate',
               name: 'github'
             };
             
