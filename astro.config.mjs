@@ -12,6 +12,7 @@ export default defineConfig({
     resolve: {
       alias: {
         'clean-stack': '/src/lib/empty.js',
+        'node:url': '/src/lib/empty.js',
       },
     },
   },
