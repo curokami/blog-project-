@@ -4,6 +4,6 @@ import { CustomAuth } from "./auth";
 import config from "./config";
 
 export function initCMS() {
-  CMS.registerAuthenticationProvider(new CustomAuth());
+  CMS.registerBackend("github", CustomAuth);
   CMS.init({ config });
 }
