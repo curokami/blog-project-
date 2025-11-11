@@ -9,13 +9,8 @@ export default defineConfig({
   output: 'static',
   integrations: [preact(), tailwind()],
   vite: {
-    ssr: {
-      external: ['node:url'],
-    },
-    build: {
-      rollupOptions: {
-        external: ['node:url', 'clean-stack'],
-      },
+    optimizeDeps: {
+      include: ['clean-stack'],
     },
   },
 });
