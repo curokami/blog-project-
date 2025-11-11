@@ -1,4 +1,4 @@
-// functions/api/callback.js (デバッグ強化版)
+// functions/api/callback.js (redirect_uri 明示版)
 export const onRequestGet = async ({ request, env }) => {
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
@@ -28,10 +28,10 @@ export const onRequestGet = async ({ request, env }) => {
         client_id: env.GITHUB_CLIENT_ID,
         client_secret: env.GITHUB_CLIENT_SECRET,
         code,
+        redirect_uri: url.origin + "/api/callback", // 明示的に redirect_uri を追加
       }),
     });
 
-    // --- デバッグの強化 ---
     const responseBody = await response.text();
 
     if (response.status !== 200) {
@@ -42,7 +42,6 @@ export const onRequestGet = async ({ request, env }) => {
     }
 
     const result = JSON.parse(responseBody);
-    // --- デバッグここまで ---
 
     if (result.error) {
         return new Response(
