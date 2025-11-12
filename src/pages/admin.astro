@@ -1,0 +1,175 @@
+---
+// src/pages/admin.astro
+---
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Manager</title>
+</head>
+<body>
+  <div id="nc-root"></div>
+</body>
+</html>
+
+<script type="module" is:inline>
+  import CMS from "decap-cms-app";
+
+  // CustomAuthクラスを定義
+  class CustomAuth {
+    constructor(auth_url = "/api/auth") {
+      this.auth_url = auth_url;
+      this.authWindow = null;
+      this.authPromise = null;
+      this.token = null;
+      this.checkClosedInterval = null;
+    }
+
+    authenticate() {
+      this.authPromise = null;
+      
+      if (this.checkClosedInterval) {
+        clearInterval(this.checkClosedInterval);
+        this.checkClosedInterval = null;
+      }
+      
+      return new Promise((resolve, reject) => {
+        this.authPromise = resolve;
+        
+        const authCallback = this.authCallback.bind(this);
+        window.removeEventListener("message", authCallback, false);
+        window.addEventListener("message", authCallback, false);
+        
+        const auth_url = `${this.auth_url}?provider=github&site_id=${window.location.host}`;
+        
+        console.log('Opening auth window:', auth_url);
+        this.authWindow = window.open(auth_url, "auth", "width=600,height=600");
+        
+        if (!this.authWindow) {
+          reject(new Error("ポップアップがブロックされました。ポップアップブロッカーを無効にしてください。"));
+          return;
+        }
+        
+        this.checkClosedInterval = setInterval(() => {
+          if (this.authWindow?.closed) {
+            if (this.checkClosedInterval) {
+              clearInterval(this.checkClosedInterval);
+              this.checkClosedInterval = null;
+            }
+            if (this.authPromise) {
+              window.removeEventListener("message", authCallback, false);
+              this.authPromise = null;
+              reject(new Error("認証ウィンドウが閉じられました"));
+            }
+          }
+        }, 1000);
+      });
+    }
+
+    authCallback(event) {
+      console.log('Received message event:', {
+        origin: event.origin,
+        expectedOrigin: window.location.origin,
+        data: event.data
+      });
+      
+      if (event.origin !== window.location.origin) {
+        console.warn(`Ignored message from different origin: ${event.origin} (expected: ${window.location.origin})`);
+        return;
+      }
+      
+      if (event.data && event.data.type === 'authorization_response' && event.data.payload && event.data.payload.token) {
+        if (this.checkClosedInterval) {
+          clearInterval(this.checkClosedInterval);
+          this.checkClosedInterval = null;
+        }
+        
+        this.token = event.data.payload.token;
+        console.log('Authentication successful, token received');
+        
+        if (this.authPromise) {
+          this.authPromise(true);
+          this.authPromise = null;
+        }
+        this.cleanup();
+      } else {
+        console.warn('Invalid message format:', event.data);
+      }
+    }
+
+    cleanup() {
+      if (this.authWindow) {
+        this.authWindow.close();
+      }
+      window.removeEventListener("message", this.authCallback.bind(this));
+    }
+
+    async getUser() {
+      if (!this.token) {
+        console.error("getUser called but no token available");
+        throw new Error("Not authenticated");
+      }
+
+      console.log("Fetching user info from GitHub API");
+      const res = await fetch("https://api.github.com/user", {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          Accept: "application/vnd.github.v3+json",
+        },
+      });
+
+      if (!res.ok) {
+        console.error("GitHub API error:", res.status, res.statusText);
+        const err = await res.json();
+        console.error("GitHub API error details:", err);
+        throw err;
+      }
+
+      const data = await res.json();
+      console.log("User info retrieved:", data.login);
+      return {
+        name: data.name || data.login,
+        login: data.login,
+        avatar_url: data.avatar_url,
+      };
+    }
+
+    logout() {
+      this.token = null;
+      return Promise.resolve();
+    }
+
+    getToken() {
+      return Promise.resolve(this.token);
+    }
+  }
+
+  // window.CMSに設定（後方互換性のため）
+  window.CMS = CMS;
+  window.DecapCMS = CMS;
+  
+  console.log('✓ Decap CMS imported from npm package');
+  console.log('CMS object:', CMS);
+  console.log('CMS type:', typeof CMS);
+  
+  // カスタムバックエンドを登録
+  if (typeof CMS.registerBackend === 'function') {
+    console.log('Registering custom backend...');
+    CMS.registerBackend("github", CustomAuth);
+    console.log('✓ Custom backend registered');
+  } else {
+    console.error('✗ CMS.registerBackend is not a function');
+  }
+  
+  // CMSを初期化（config.ymlを自動的に読み込む）
+  if (typeof CMS.init === 'function') {
+    console.log('Initializing CMS...');
+    CMS.init();
+    console.log('✓ Decap CMS initialized successfully');
+  } else {
+    console.error('✗ CMS.init is not a function');
+  }
+</script>
+

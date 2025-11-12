@@ -21,3 +21,4 @@ collections:
       - { label: 画像, name: image, widget: image }
       - { label: タグ, name: tags, widget: list, allow_add: true }
       - { label: 本文, name: body, widget: markdown }
+
