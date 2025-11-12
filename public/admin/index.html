@@ -1,15 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager</title>
-  <script src="https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.css" />
 </head>
 <body>
   <div id="nc-root"></div>
-  <script type="module">
+  
+  <!-- Decap CMSを読み込む -->
+  <script>
+    // グローバルスコープでCMSオブジェクトを待機
+    window.cmsReady = false;
+    
+    // CMSスクリプトの読み込み完了を待つ
+    function loadCMS() {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.js';
+      script.onload = function() {
+        console.log('Decap CMS script loaded');
+        // 少し遅延させてReactの初期化を待つ
+        setTimeout(function() {
+          window.cmsReady = true;
+          if (typeof initDecapCMS === 'function') {
+            initDecapCMS();
+          }
+        }, 200);
+      };
+      script.onerror = function() {
+        console.error('Failed to load Decap CMS script');
+        handleCMSError();
+      };
+      document.head.appendChild(script);
+    }
+    
+    // DOM読み込み後にCMSを読み込む
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadCMS);
+    } else {
+      loadCMS();
+    }
+  </script>
+  
+  <script>
     // Decap CMSの設定
     const config = {
       backend: {
@@ -61,8 +95,9 @@
         return new Promise((resolve, reject) => {
           this.authPromise = resolve;
           
-          window.removeEventListener("message", this.authCallback.bind(this), false);
-          window.addEventListener("message", this.authCallback.bind(this), false);
+          const authCallback = this.authCallback.bind(this);
+          window.removeEventListener("message", authCallback, false);
+          window.addEventListener("message", authCallback, false);
           
           const auth_url = `${this.auth_url}?provider=github&site_id=${window.location.host}`;
           
@@ -81,7 +116,7 @@
                 this.checkClosedInterval = null;
               }
               if (this.authPromise) {
-                window.removeEventListener("message", this.authCallback.bind(this), false);
+                window.removeEventListener("message", authCallback, false);
                 this.authPromise = null;
                 reject(new Error("認証ウィンドウが閉じられました"));
               }
@@ -169,33 +204,87 @@
     }
 
     // Decap CMSを初期化
-    function initCMS() {
+    function initDecapCMS() {
       try {
-        // CMSが読み込まれるまで待つ
-        if (typeof window.CMS === 'undefined') {
-          console.warn('Decap CMS not loaded, retrying...');
-          setTimeout(initCMS, 100);
+        console.log('Initializing Decap CMS...');
+        console.log('window.CMS:', window.CMS);
+        console.log('window.DecapCMS:', window.DecapCMS);
+        
+        // window.CMSまたはwindow.DecapCMSを確認
+        const CMS = window.CMS || window.DecapCMS;
+        
+        if (typeof CMS === 'undefined') {
+          console.error('Decap CMS is not available');
+          showError('Decap CMSが読み込まれていません。ページを再読み込みしてください。');
           return;
         }
 
-        // カスタムバックエンドを登録
-        window.CMS.registerBackend("github", CustomAuth);
+        console.log('Decap CMS found:', CMS);
+        console.log('CMS.registerBackend:', typeof CMS.registerBackend);
+        console.log('CMS.init:', typeof CMS.init);
         
-        // CMSを初期化
-        window.CMS.init({ config });
-        
-        console.log("Decap CMS initialized successfully");
+        try {
+          // カスタムバックエンドを登録
+          if (typeof CMS.registerBackend === 'function') {
+            CMS.registerBackend("github", CustomAuth);
+            console.log('Custom backend registered successfully');
+          } else {
+            console.error('CMS.registerBackend is not a function');
+            showError('CMS.registerBackendが見つかりません。');
+            return;
+          }
+          
+          // CMSを初期化
+          if (typeof CMS.init === 'function') {
+            console.log('Initializing CMS with config:', config);
+            CMS.init({ config });
+            console.log("Decap CMS initialized successfully");
+          } else {
+            console.error('CMS.init is not a function');
+            showError('CMS.initが見つかりません。');
+            return;
+          }
+        } catch (error) {
+          console.error("Failed to initialize Decap CMS:", error);
+          console.error("Error name:", error.name);
+          console.error("Error message:", error.message);
+          console.error("Error stack:", error.stack);
+          showError('Decap CMSの初期化に失敗しました: ' + error.message);
+        }
       } catch (error) {
-        console.error("Failed to initialize Decap CMS:", error);
+        console.error("Unexpected error:", error);
+        showError('予期しないエラーが発生しました: ' + error.message);
       }
     }
 
-    // DOMが読み込まれた後に初期化
-    if (document.readyState === "loading") {
-      document.addEventListener("DOMContentLoaded", initCMS);
-    } else {
-      initCMS();
+    // エラーハンドラー
+    function handleCMSError() {
+      console.error('Failed to load Decap CMS script');
+      showError('Decap CMSのスクリプトの読み込みに失敗しました。');
     }
+
+    // エラーメッセージを表示
+    function showError(message) {
+      const root = document.getElementById('nc-root');
+      if (root) {
+        root.innerHTML = '<div style="padding: 40px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;"><h1 style="color: #e74c3c; margin-bottom: 20px;">エラー</h1><p style="color: #333; font-size: 16px; margin-bottom: 20px;">' + message + '</p><button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">ページを再読み込み</button></div>';
+      }
+    }
+
+    // フォールバック: スクリプトが読み込まれない場合の処理
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        const CMS = window.CMS || window.DecapCMS;
+        if (typeof CMS === 'undefined') {
+          console.warn('Decap CMS not loaded after window.load event');
+          // initDecapCMSが呼ばれていない場合は、手動で呼び出す
+          if (!window.cmsInitialized) {
+            console.log('Attempting to initialize CMS manually...');
+            initDecapCMS();
+          }
+        }
+      }, 1000);
+    });
   </script>
 </body>
 </html>
