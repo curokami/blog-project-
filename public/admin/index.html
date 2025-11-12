@@ -4,345 +4,192 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Content Manager</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/decap-cms-app@3.9.0/dist/decap-cms-app.css" />
+  <link rel="stylesheet" href="https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.css" />
 </head>
 <body>
   <div id="nc-root"></div>
   
+  <!-- Decap CMSスクリプトを読み込む -->
+  <script src="https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.js"></script>
+  
   <script>
-    // Decap CMSの設定
-    const config = {
-      backend: {
-        name: "github",
-        repo: "curokami/blog-project-",
-        branch: "main",
-        auth_endpoint: "/api/auth",
-      },
-      media_folder: "public/images",
-      public_folder: "/images",
-      collections: [
-        {
-          name: "posts",
-          label: "ブログ記事",
-          folder: "src/content/posts",
-          create: true,
-          slug: "{{year}}-{{month}}-{{day}}-{{slug}}",
-          fields: [
-            { label: "タイトル", name: "title", widget: "string" },
-            { label: "公開日", name: "pubDate", widget: "datetime" },
-            { label: "著者", name: "author", widget: "string" },
-            { label: "概要", name: "description", widget: "text" },
-            { label: "画像", name: "image", widget: "image" },
-            { label: "タグ", name: "tags", widget: "list", allow_add: true },
-            { label: "本文", name: "body", widget: "markdown" },
-          ],
-        },
-      ],
-    };
-
-    // カスタム認証プロバイダー
-    class CustomAuth {
-      constructor(auth_url = "/api/auth") {
-        this.auth_url = auth_url;
-        this.authWindow = null;
-        this.authPromise = null;
-        this.token = null;
-        this.checkClosedInterval = null;
-      }
-
-      authenticate() {
-        this.authPromise = null;
-        
-        if (this.checkClosedInterval) {
-          clearInterval(this.checkClosedInterval);
+    (function() {
+      // カスタム認証プロバイダー
+      class CustomAuth {
+        constructor(auth_url = "/api/auth") {
+          this.auth_url = auth_url;
+          this.authWindow = null;
+          this.authPromise = null;
+          this.token = null;
           this.checkClosedInterval = null;
         }
-        
-        return new Promise((resolve, reject) => {
-          this.authPromise = resolve;
-          
-          const authCallback = this.authCallback.bind(this);
-          window.removeEventListener("message", authCallback, false);
-          window.addEventListener("message", authCallback, false);
-          
-          const auth_url = `${this.auth_url}?provider=github&site_id=${window.location.host}`;
-          
-          console.log('Opening auth window:', auth_url);
-          this.authWindow = window.open(auth_url, "auth", "width=600,height=600");
-          
-          if (!this.authWindow) {
-            reject(new Error("ポップアップがブロックされました。ポップアップブロッカーを無効にしてください。"));
-            return;
-          }
-          
-          this.checkClosedInterval = setInterval(() => {
-            if (this.authWindow?.closed) {
-              if (this.checkClosedInterval) {
-                clearInterval(this.checkClosedInterval);
-                this.checkClosedInterval = null;
-              }
-              if (this.authPromise) {
-                window.removeEventListener("message", authCallback, false);
-                this.authPromise = null;
-                reject(new Error("認証ウィンドウが閉じられました"));
-              }
-            }
-          }, 1000);
-        });
-      }
 
-      authCallback(event) {
-        console.log('Received message event:', {
-          origin: event.origin,
-          expectedOrigin: window.location.origin,
-          data: event.data
-        });
-        
-        if (event.origin !== window.location.origin) {
-          console.warn(`Ignored message from different origin: ${event.origin} (expected: ${window.location.origin})`);
-          return;
-        }
-        
-        if (event.data && event.data.type === 'authorization_response' && event.data.payload && event.data.payload.token) {
+        authenticate() {
+          this.authPromise = null;
+          
           if (this.checkClosedInterval) {
             clearInterval(this.checkClosedInterval);
             this.checkClosedInterval = null;
           }
           
-          this.token = event.data.payload.token;
-          console.log('Authentication successful, token received');
+          return new Promise((resolve, reject) => {
+            this.authPromise = resolve;
+            
+            const authCallback = this.authCallback.bind(this);
+            window.removeEventListener("message", authCallback, false);
+            window.addEventListener("message", authCallback, false);
+            
+            const auth_url = `${this.auth_url}?provider=github&site_id=${window.location.host}`;
+            
+            console.log('Opening auth window:', auth_url);
+            this.authWindow = window.open(auth_url, "auth", "width=600,height=600");
+            
+            if (!this.authWindow) {
+              reject(new Error("ポップアップがブロックされました。ポップアップブロッカーを無効にしてください。"));
+              return;
+            }
+            
+            this.checkClosedInterval = setInterval(() => {
+              if (this.authWindow?.closed) {
+                if (this.checkClosedInterval) {
+                  clearInterval(this.checkClosedInterval);
+                  this.checkClosedInterval = null;
+                }
+                if (this.authPromise) {
+                  window.removeEventListener("message", authCallback, false);
+                  this.authPromise = null;
+                  reject(new Error("認証ウィンドウが閉じられました"));
+                }
+              }
+            }, 1000);
+          });
+        }
+
+        authCallback(event) {
+          console.log('Received message event:', {
+            origin: event.origin,
+            expectedOrigin: window.location.origin,
+            data: event.data
+          });
           
-          if (this.authPromise) {
-            this.authPromise(true);
-            this.authPromise = null;
-          }
-          this.cleanup();
-        } else {
-          console.warn('Invalid message format:', event.data);
-        }
-      }
-
-      cleanup() {
-        if (this.authWindow) {
-          this.authWindow.close();
-        }
-        window.removeEventListener("message", this.authCallback.bind(this));
-      }
-
-      async getUser() {
-        if (!this.token) {
-          console.error("getUser called but no token available");
-          throw new Error("Not authenticated");
-        }
-
-        console.log("Fetching user info from GitHub API");
-        const res = await fetch("https://api.github.com/user", {
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-            Accept: "application/vnd.github.v3+json",
-          },
-        });
-
-        if (!res.ok) {
-          console.error("GitHub API error:", res.status, res.statusText);
-          const err = await res.json();
-          console.error("GitHub API error details:", err);
-          throw err;
-        }
-
-        const data = await res.json();
-        console.log("User info retrieved:", data.login);
-        return {
-          name: data.name || data.login,
-          login: data.login,
-          avatar_url: data.avatar_url,
-        };
-      }
-
-      logout() {
-        this.token = null;
-        return Promise.resolve();
-      }
-
-      getToken() {
-        return Promise.resolve(this.token);
-      }
-    }
-
-    // Decap CMSを初期化
-    function initDecapCMS() {
-      try {
-        console.log('=== Initializing Decap CMS ===');
-        console.log('window.CMS:', window.CMS);
-        console.log('window.DecapCMS:', window.DecapCMS);
-        console.log('window.NETLIFY_CMS:', window.NETLIFY_CMS);
-        
-        // 複数の可能性のあるグローバル変数を確認
-        const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS;
-        
-        if (typeof CMS === 'undefined') {
-          console.error('Decap CMS is not available');
-          console.error('Available window properties:', Object.keys(window).filter(k => k.includes('CMS') || k.includes('Decap') || k.includes('NETLIFY')));
-          showError('Decap CMSが読み込まれていません。ページを再読み込みしてください。<br><small style="color: #666;">コンソールログを確認してください。</small>');
-          return false;
-        }
-
-        console.log('Decap CMS found:', CMS);
-        console.log('CMS object keys:', Object.keys(CMS));
-        console.log('CMS.registerBackend:', typeof CMS.registerBackend);
-        console.log('CMS.init:', typeof CMS.init);
-        
-        try {
-          // カスタムバックエンドを登録
-          if (typeof CMS.registerBackend === 'function') {
-            CMS.registerBackend("github", CustomAuth);
-            console.log('✓ Custom backend registered successfully');
-          } else {
-            console.error('CMS.registerBackend is not a function');
-            showError('CMS.registerBackendが見つかりません。<br><small style="color: #666;">CMS object: ' + JSON.stringify(Object.keys(CMS)) + '</small>');
-            return false;
+          if (event.origin !== window.location.origin) {
+            console.warn(`Ignored message from different origin: ${event.origin} (expected: ${window.location.origin})`);
+            return;
           }
           
-          // CMSを初期化
-          if (typeof CMS.init === 'function') {
-            console.log('Initializing CMS with config:', config);
-            CMS.init({ config });
-            console.log("✓ Decap CMS initialized successfully");
-            window.cmsInitialized = true;
-            return true;
+          if (event.data && event.data.type === 'authorization_response' && event.data.payload && event.data.payload.token) {
+            if (this.checkClosedInterval) {
+              clearInterval(this.checkClosedInterval);
+              this.checkClosedInterval = null;
+            }
+            
+            this.token = event.data.payload.token;
+            console.log('Authentication successful, token received');
+            
+            if (this.authPromise) {
+              this.authPromise(true);
+              this.authPromise = null;
+            }
+            this.cleanup();
           } else {
-            console.error('CMS.init is not a function');
-            console.error('Available CMS methods:', Object.keys(CMS).filter(k => typeof CMS[k] === 'function'));
-            showError('CMS.initが見つかりません。<br><small style="color: #666;">利用可能なメソッド: ' + Object.keys(CMS).filter(k => typeof CMS[k] === 'function').join(', ') + '</small>');
-            return false;
+            console.warn('Invalid message format:', event.data);
           }
-        } catch (error) {
-          console.error("Failed to initialize Decap CMS:", error);
-          console.error("Error name:", error.name);
-          console.error("Error message:", error.message);
-          console.error("Error stack:", error.stack);
-          showError('Decap CMSの初期化に失敗しました: ' + error.message + '<br><small style="color: #666;">詳細はコンソールを確認してください。</small>');
-          return false;
         }
-      } catch (error) {
-        console.error("Unexpected error:", error);
-        showError('予期しないエラーが発生しました: ' + error.message);
-        return false;
+
+        cleanup() {
+          if (this.authWindow) {
+            this.authWindow.close();
+          }
+          window.removeEventListener("message", this.authCallback.bind(this));
+        }
+
+        async getUser() {
+          if (!this.token) {
+            console.error("getUser called but no token available");
+            throw new Error("Not authenticated");
+          }
+
+          console.log("Fetching user info from GitHub API");
+          const res = await fetch("https://api.github.com/user", {
+            headers: {
+              Authorization: `Bearer ${this.token}`,
+              Accept: "application/vnd.github.v3+json",
+            },
+          });
+
+          if (!res.ok) {
+            console.error("GitHub API error:", res.status, res.statusText);
+            const err = await res.json();
+            console.error("GitHub API error details:", err);
+            throw err;
+          }
+
+          const data = await res.json();
+          console.log("User info retrieved:", data.login);
+          return {
+            name: data.name || data.login,
+            login: data.login,
+            avatar_url: data.avatar_url,
+          };
+        }
+
+        logout() {
+          this.token = null;
+          return Promise.resolve();
+        }
+
+        getToken() {
+          return Promise.resolve(this.token);
+        }
       }
-    }
 
-    // エラーメッセージを表示
-    function showError(message) {
-      const root = document.getElementById('nc-root');
-      if (root) {
-        root.innerHTML = '<div style="padding: 40px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 600px; margin: 0 auto;"><h1 style="color: #e74c3c; margin-bottom: 20px;">エラー</h1><p style="color: #333; font-size: 16px; margin-bottom: 20px; line-height: 1.6;">' + message + '</p><button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; margin-top: 10px;">ページを再読み込み</button></div>';
-      }
-    }
-
-    // CMSスクリプトを読み込む
-    let retryCount = 0;
-    const maxRetries = 3;
-    const cdnUrls = [
-      'https://cdn.jsdelivr.net/npm/decap-cms-app@3.9.0/dist/decap-cms-app.js',
-      'https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.js',
-      'https://cdn.skypack.dev/decap-cms-app@3.9.0'
-    ];
-
-    function loadCMSFromCDN(cdnIndex = 0) {
-      if (cdnIndex >= cdnUrls.length) {
-        console.error('All CDN URLs failed');
-        showError('Decap CMSの読み込みに失敗しました。<br><small style="color: #666;">すべてのCDNから読み込めませんでした。</small>');
-        return;
-      }
-
-      const script = document.createElement('script');
-      script.src = cdnUrls[cdnIndex];
-      script.crossOrigin = 'anonymous';
-      
-      script.onload = function() {
-        console.log('✓ Decap CMS script loaded from:', cdnUrls[cdnIndex]);
-        console.log('Checking for CMS object...');
+      // CMSオブジェクトを待つ関数
+      function waitForCMS(callback, maxAttempts = 100) {
+        let attempts = 0;
         
-        // スクリプト読み込み後、最大5秒待ってCMSオブジェクトを確認
-        let checkCount = 0;
-        const maxChecks = 50; // 5秒（100ms * 50）
-        
-        function checkCMS() {
+        function check() {
+          // 複数の可能性のあるグローバル変数を確認
           const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS;
           
-          if (typeof CMS !== 'undefined') {
-            console.log('✓ CMS object found, initializing...');
-            if (initDecapCMS()) {
-              return; // 成功
-            }
-          }
-          
-          checkCount++;
-          if (checkCount < maxChecks) {
-            setTimeout(checkCMS, 100);
+          if (CMS && typeof CMS.registerBackend === 'function' && typeof CMS.init === 'function') {
+            console.log('✓ CMS found and ready');
+            callback(CMS);
+          } else if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(check, 50);
           } else {
-            console.error('CMS object not found after script load');
-            console.error('window.CMS:', window.CMS);
-            console.error('window.DecapCMS:', window.DecapCMS);
-            console.error('window.NETLIFY_CMS:', window.NETLIFY_CMS);
-            
-            // 次のCDNを試す
-            if (cdnIndex + 1 < cdnUrls.length) {
-              console.log('Trying next CDN...');
-              loadCMSFromCDN(cdnIndex + 1);
-            } else {
-              showError('Decap CMSオブジェクトが見つかりません。<br><small style="color: #666;">すべてのCDNを試しましたが失敗しました。</small>');
+            console.error('✗ CMS not found after maximum attempts');
+            const root = document.getElementById('nc-root');
+            if (root) {
+              root.innerHTML = '<div style="padding: 40px; text-align: center; font-family: system-ui, sans-serif;"><h1 style="color: #e74c3c; margin-bottom: 20px;">エラー</h1><p style="color: #333; margin-bottom: 20px;">Decap CMSが読み込まれていません。</p><p style="color: #666; font-size: 14px; margin-bottom: 20px;">スクリプトの読み込みを確認してください。</p><button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">ページを再読み込み</button></div>';
             }
           }
         }
         
-        // 少し遅延させてからチェック開始
-        setTimeout(checkCMS, 100);
-      };
-      
-      script.onerror = function() {
-        console.error('✗ Failed to load from:', cdnUrls[cdnIndex]);
-        
-        // 次のCDNを試す
-        if (cdnIndex + 1 < cdnUrls.length) {
-          console.log('Trying next CDN...');
-          loadCMSFromCDN(cdnIndex + 1);
-        } else {
-          showError('Decap CMSのスクリプトの読み込みに失敗しました。<br><small style="color: #666;">すべてのCDNから読み込めませんでした。</small>');
-        }
-      };
-      
-      console.log('Loading Decap CMS from:', cdnUrls[cdnIndex]);
-      document.head.appendChild(script);
-    }
-
-    // DOM読み込み後にCMSを読み込む
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function() {
-        setTimeout(loadCMSFromCDN, 100);
-      });
-    } else {
-      setTimeout(loadCMSFromCDN, 100);
-    }
-
-    // フォールバック: 10秒後に最終チェック
-    setTimeout(function() {
-      if (!window.cmsInitialized) {
-        const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS;
-        if (typeof CMS === 'undefined') {
-          console.error('Final check: Decap CMS not loaded');
-          console.error('window properties:', Object.keys(window).filter(k => 
-            k.toLowerCase().includes('cms') || 
-            k.toLowerCase().includes('decap') || 
-            k.toLowerCase().includes('netlify') ||
-            k.toLowerCase().includes('react')
-          ));
-        } else {
-          console.log('CMS found in final check, attempting initialization...');
-          initDecapCMS();
-        }
+        check();
       }
-    }, 10000);
+
+      // CMSが読み込まれたら初期化
+      waitForCMS(function(CMS) {
+        try {
+          console.log('Registering custom backend...');
+          // カスタムバックエンドを登録
+          CMS.registerBackend("github", CustomAuth);
+          console.log('✓ Custom backend registered');
+          
+          // CMSを初期化（config.ymlを自動的に読み込む）
+          console.log('Initializing CMS...');
+          CMS.init();
+          console.log('✓ Decap CMS initialized successfully');
+        } catch (error) {
+          console.error('✗ Failed to initialize CMS:', error);
+          const root = document.getElementById('nc-root');
+          if (root) {
+            root.innerHTML = '<div style="padding: 40px; text-align: center; font-family: system-ui, sans-serif;"><h1 style="color: #e74c3c; margin-bottom: 20px;">エラー</h1><p style="color: #333; margin-bottom: 20px;">' + error.message + '</p><pre style="text-align: left; background: #f5f5f5; padding: 20px; border-radius: 4px; overflow: auto; max-width: 800px; margin: 0 auto;">' + error.stack + '</pre></div>';
+          }
+        }
+      });
+    })();
   </script>
 </body>
 </html>
