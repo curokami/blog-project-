@@ -54,6 +54,8 @@ export const onRequestGet = async ({ request, env }) => {
         return new Response("No access_token found in response.", { status: 500, headers: { "Content-Type": "text/plain" } });
     }
 
+    // トークンを一時的に保存するためのセッションストレージの代わりに、URLフラグメントを使用
+    // または直接postMessageで送信
     return new Response(
       `
       <!DOCTYPE html>
@@ -63,19 +65,45 @@ export const onRequestGet = async ({ request, env }) => {
         </head>
         <body>
           <script>
-            const authData = {
-              payload: { 
-                token: "${result.access_token}", 
-                provider: "github"
-              },
-              event: 'authenticate',
-              name: 'github'
-            };
-            
-            const targetOrigin = window.opener.location.origin;
-
-            window.opener.postMessage(authData, targetOrigin);
-            window.close();
+            (function() {
+              try {
+                if (window.opener && !window.opener.closed) {
+                  const authData = {
+                    type: 'authorization_response',
+                    payload: { 
+                      token: "${result.access_token}", 
+                      provider: "github"
+                    }
+                  };
+                  
+                  // オリジンを動的に取得（Cloudflare Pages用）
+                  let targetOrigin;
+                  try {
+                    // 同一オリジンの場合、opener.location.originにアクセス可能
+                    targetOrigin = window.opener.location.origin;
+                  } catch (e) {
+                    // クロスオリジンの場合（通常は発生しない）、現在のページのオリジンを使用
+                    // Cloudflare Pagesでは、callbackとadminページは同一オリジンである必要がある
+                    targetOrigin = window.location.origin;
+                  }
+                  
+                  console.log('Sending auth data to opener:', targetOrigin, authData);
+                  window.opener.postMessage(authData, targetOrigin);
+                  
+                  // メッセージ送信後、少し待ってから閉じる
+                  setTimeout(() => {
+                    window.close();
+                  }, 500);
+                } else {
+                  // openerがない、または閉じられている場合
+                  document.body.innerHTML = '<p>認証が完了しました。このウィンドウを閉じてください。</p><p>もし自動的に閉じない場合は、手動で閉じてください。</p>';
+                  console.error('Window opener is not available or closed');
+                }
+              } catch (error) {
+                console.error('Error in auth callback:', error);
+                document.body.innerHTML = '<p>認証中にエラーが発生しました。このウィンドウを閉じて、もう一度お試しください。</p>';
+              }
+            })();
           </script>
         </body>
       </html>

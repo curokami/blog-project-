@@ -1,12 +1,15 @@
 // src/lib/config.ts
 import type { CmsConfig } from "decap-cms-app";
 
+// Cloudflare Pages用の設定
+// base_urlは設定しないことで、現在のオリジン（window.location.origin）が自動的に使用される
 const config: CmsConfig = {
   backend: {
     name: "github",
     repo: "curokami/blog-project-",
     branch: "main",
-    base_url: "https://blog-project-398.pages.dev",
+    // base_urlを設定しないことで、現在のページのオリジンが自動的に使用される
+    // これにより、Cloudflare PagesのプレビューURLでも正常に動作する
     auth_endpoint: "/api/auth",
   },
   media_folder: "public/images",
