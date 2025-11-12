@@ -9,7 +9,6 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
-  <link href="/admin/config.yml" type="text/yaml" rel="cms-config-url" />
   <title>Content Manager</title>
 </head>
 <body>
@@ -150,17 +149,49 @@
     function waitForCMS() {
       const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS;
       
-      if (CMS && typeof CMS.registerBackend === 'function') {
+      if (CMS && typeof CMS.registerBackend === 'function' && typeof CMS.init === 'function') {
         console.log('✓ Decap CMS loaded from CDN');
         console.log('CMS object:', CMS);
         
-        // カスタムバックエンドを登録
+        // カスタムバックエンドを登録（CMS.init()の前に実行する必要がある）
         console.log('Registering custom backend...');
         CMS.registerBackend("github", CustomAuth);
         console.log('✓ Custom backend registered');
         
-        // CMSは自動的にconfig.ymlを読み込んで初期化される
-        console.log('✓ Decap CMS ready');
+        // config.ymlを読み込んでCMSを初期化
+        // <link>タグを使わず、明示的にconfig.ymlを指定して初期化
+        console.log('Initializing CMS with config.yml...');
+        CMS.init({
+          config: {
+            backend: {
+              name: "github",
+              repo: "curokami/blog-project-",
+              branch: "main",
+              auth_endpoint: "/api/auth"
+            },
+            media_folder: "public/images",
+            public_folder: "/images",
+            collections: [
+              {
+                name: "posts",
+                label: "ブログ記事",
+                folder: "src/content/posts",
+                create: true,
+                slug: "{{year}}-{{month}}-{{day}}-{{slug}}",
+                fields: [
+                  { label: "タイトル", name: "title", widget: "string" },
+                  { label: "公開日", name: "pubDate", widget: "datetime" },
+                  { label: "著者", name: "author", widget: "string" },
+                  { label: "概要", name: "description", widget: "text" },
+                  { label: "画像", name: "image", widget: "image" },
+                  { label: "タグ", name: "tags", widget: "list", allow_add: true },
+                  { label: "本文", name: "body", widget: "markdown" }
+                ]
+              }
+            ]
+          }
+        });
+        console.log('✓ Decap CMS initialized successfully');
       } else {
         console.log('Waiting for Decap CMS...');
         setTimeout(waitForCMS, 100);
