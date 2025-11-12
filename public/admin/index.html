@@ -8,94 +8,58 @@
 <body>
   <div id="nc-root"></div>
   
-  <!-- Decap CMSスクリプトをESMモジュールとして読み込む -->
-  <script type="module">
-    // ESMモジュールとして読み込む
-    import CMS from 'https://cdn.skypack.dev/decap-cms-app@3.9.0';
+  <!-- Decap CMSスクリプトをUMDバンドルとして直接読み込む -->
+  <script src="https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.js"></script>
+  
+  <script>
+    // UMDバンドルがwindow.CMSを設定するのを待つ
+    let attempts = 0;
+    const maxAttempts = 200; // 10秒（50ms * 200）
     
-    console.log('✓ Decap CMS module loaded');
-    console.log('CMS object:', CMS);
-    console.log('CMS type:', typeof CMS);
-    
-    // window.CMSに設定（後方互換性のため）
-    window.CMS = CMS;
-    window.DecapCMS = CMS;
-    
-    console.log('✓ CMS object set to window.CMS');
-    
-    // 初期化を開始
-    if (document.readyState === 'complete') {
-      setTimeout(() => {
-        if (typeof initializeCMS === 'function') {
-          initializeCMS();
+    function waitForCMS() {
+      // すべての可能なグローバル変数を確認
+      const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS || window.netlifyCMS || window.decapCMS;
+      
+      if (attempts % 20 === 0) {
+        console.log(`Checking for CMS... (${attempts}/${maxAttempts})`);
+        console.log('window.CMS:', typeof window.CMS, window.CMS);
+        console.log('window.DecapCMS:', typeof window.DecapCMS, window.DecapCMS);
+        console.log('window.NETLIFY_CMS:', typeof window.NETLIFY_CMS, window.NETLIFY_CMS);
+        console.log('All window keys related to CMS:', Object.keys(window).filter(k => 
+          k.toLowerCase().includes('cms') || k.toLowerCase().includes('decap') || k.toLowerCase().includes('netlify')
+        ));
+      }
+      
+      if (CMS && typeof CMS.registerBackend === 'function' && typeof CMS.init === 'function') {
+        console.log('✓ CMS object found');
+        console.log('CMS object:', CMS);
+        console.log('CMS methods:', Object.keys(CMS).filter(k => typeof CMS[k] === 'function').slice(0, 20));
+        
+        if (typeof window.initializeCMS === 'function') {
+          window.initializeCMS();
+        } else {
+          console.error('✗ initializeCMS function not found');
+          document.getElementById('nc-root').innerHTML = '<div style="padding: 40px; text-align: center; font-family: system-ui, sans-serif;"><h1 style="color: #e74c3c; margin-bottom: 20px;">エラー</h1><p style="color: #333; margin-bottom: 20px;">initializeCMS関数が見つかりません。</p></div>';
         }
-      }, 100);
+      } else if (attempts < maxAttempts) {
+        attempts++;
+        setTimeout(waitForCMS, 50);
+      } else {
+        console.error('✗ CMS object not found after maximum attempts');
+        console.error('Script loaded?', document.querySelector('script[src*="decap-cms-app"]') !== null);
+        console.error('All window properties:', Object.keys(window).slice(0, 100));
+        document.getElementById('nc-root').innerHTML = '<div style="padding: 40px; text-align: center; font-family: system-ui, sans-serif;"><h1 style="color: #e74c3c; margin-bottom: 20px;">エラー</h1><p style="color: #333; margin-bottom: 20px;">Decap CMSオブジェクトが見つかりません。</p><p style="color: #666; font-size: 14px; margin-bottom: 20px;">UMDバンドルがwindow.CMSを設定していない可能性があります。</p><button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">ページを再読み込み</button></div>';
+      }
+    }
+    
+    // window.onload後にチェック開始
+    if (document.readyState === 'complete') {
+      setTimeout(waitForCMS, 100);
     } else {
       window.addEventListener('load', () => {
-        setTimeout(() => {
-          if (typeof initializeCMS === 'function') {
-            initializeCMS();
-          }
-        }, 100);
+        setTimeout(waitForCMS, 100);
       });
     }
-  </script>
-  
-  <!-- フォールバック: UMDバンドルを試す -->
-  <script>
-    // ESMが失敗した場合のフォールバック
-    let fallbackAttempted = false;
-    
-    setTimeout(() => {
-      if (!window.CMS && !fallbackAttempted) {
-        fallbackAttempted = true;
-        console.warn('⚠ ESM module not available, trying UMD bundle...');
-        
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.js';
-        script.onload = () => {
-          console.log('✓ UMD bundle loaded');
-          
-          // UMDバンドルがwindow.CMSを設定するのを待つ（複数回チェック）
-          let attempts = 0;
-          const maxAttempts = 100; // 5秒（50ms * 100）
-          
-          function checkCMS() {
-            const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS || window.netlifyCMS || window.decapCMS;
-            
-            console.log(`Checking for CMS... (${attempts}/${maxAttempts})`);
-            console.log('window.CMS:', typeof window.CMS, window.CMS);
-            console.log('window.DecapCMS:', typeof window.DecapCMS, window.DecapCMS);
-            console.log('window.NETLIFY_CMS:', typeof window.NETLIFY_CMS, window.NETLIFY_CMS);
-            console.log('All window keys:', Object.keys(window).filter(k => 
-              k.toLowerCase().includes('cms') || k.toLowerCase().includes('decap') || k.toLowerCase().includes('netlify')
-            ));
-            
-            if (CMS && typeof CMS.registerBackend === 'function' && typeof CMS.init === 'function') {
-              console.log('✓ CMS object found in UMD bundle');
-              if (typeof window.initializeCMS === 'function') {
-                window.initializeCMS();
-              } else {
-                console.error('✗ initializeCMS function not found');
-              }
-            } else if (attempts < maxAttempts) {
-              attempts++;
-              setTimeout(checkCMS, 50);
-            } else {
-              console.error('✗ CMS object not found in UMD bundle after maximum attempts');
-              console.error('All window properties:', Object.keys(window).slice(0, 50));
-            }
-          }
-          
-          // 少し待ってからチェック開始
-          setTimeout(checkCMS, 500);
-        };
-        script.onerror = () => {
-          console.error('✗ UMD bundle failed to load');
-        };
-        document.head.appendChild(script);
-      }
-    }, 3000);
   </script>
   
   <script>
