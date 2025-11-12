@@ -9,10 +9,9 @@
   <title>Content Manager</title>
 </head>
 <body>
-  <script>
-    import('../lib/cms').then(({ initCMS }) => {
-      initCMS();
-    });
-  </script>
+<script>
+  // By simply importing the module, the top-level code in cms.ts will execute once.
+  import '~/lib/cms';
+</script>
 </body>
 </html>

@@ -3,13 +3,10 @@ import CMS from "decap-cms-app";
 import { CustomAuth } from "./auth";
 import config from "./config";
 
-export function initCMS() {
-  // Use a global flag to prevent re-initialization
-  if ((window as any).cmsInitialized) {
-    return;
-  }
-  (window as any).cmsInitialized = true;
-
-  CMS.registerBackend("github", CustomAuth);
-  CMS.init(config);
-}
+/**
+ * The initCMS function is removed and the initialization logic is moved to the top level.
+ * This ensures that the code is executed only once when the module is first imported,
+ * providing the most robust guard against re-initialization issues.
+ */
+CMS.registerBackend("github", CustomAuth);
+CMS.init(config);
