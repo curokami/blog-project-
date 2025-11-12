@@ -17,14 +17,22 @@
     const maxAttempts = 200; // 10秒（50ms * 200）
     
     function waitForCMS() {
-      // すべての可能なグローバル変数を確認
-      const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS || window.netlifyCMS || window.decapCMS;
+      // すべての可能なグローバル変数を確認（DecapCmsAppも含む）
+      let CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS || window.netlifyCMS || window.decapCMS || window.DecapCmsApp;
+      
+      // DecapCmsAppが見つかった場合、window.CMSに設定
+      if (window.DecapCmsApp && !window.CMS) {
+        console.log('Found window.DecapCmsApp, setting window.CMS');
+        window.CMS = window.DecapCmsApp;
+        CMS = window.CMS;
+      }
       
       if (attempts % 20 === 0) {
         console.log(`Checking for CMS... (${attempts}/${maxAttempts})`);
         console.log('window.CMS:', typeof window.CMS, window.CMS);
         console.log('window.DecapCMS:', typeof window.DecapCMS, window.DecapCMS);
         console.log('window.NETLIFY_CMS:', typeof window.NETLIFY_CMS, window.NETLIFY_CMS);
+        console.log('window.DecapCmsApp:', typeof window.DecapCmsApp, window.DecapCmsApp);
         console.log('All window keys related to CMS:', Object.keys(window).filter(k => 
           k.toLowerCase().includes('cms') || k.toLowerCase().includes('decap') || k.toLowerCase().includes('netlify')
         ));
@@ -47,6 +55,7 @@
       } else {
         console.error('✗ CMS object not found after maximum attempts');
         console.error('Script loaded?', document.querySelector('script[src*="decap-cms-app"]') !== null);
+        console.error('window.DecapCmsApp:', typeof window.DecapCmsApp, window.DecapCmsApp);
         console.error('All window properties:', Object.keys(window).slice(0, 100));
         document.getElementById('nc-root').innerHTML = '<div style="padding: 40px; text-align: center; font-family: system-ui, sans-serif;"><h1 style="color: #e74c3c; margin-bottom: 20px;">エラー</h1><p style="color: #333; margin-bottom: 20px;">Decap CMSオブジェクトが見つかりません。</p><p style="color: #666; font-size: 14px; margin-bottom: 20px;">UMDバンドルがwindow.CMSを設定していない可能性があります。</p><button onclick="location.reload()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">ページを再読み込み</button></div>';
       }
