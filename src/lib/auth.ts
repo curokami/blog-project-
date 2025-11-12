@@ -39,7 +39,26 @@ export class CustomAuth implements CmsAuthenticationProvider {
   };
 
   getUser = (): Promise<CmsUser> => {
-    return Promise.resolve({ name: "User", login: "user" });
+    if (!this.token) {
+      return Promise.reject(new Error("Not authenticated"));
+    }
+
+    return fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `token ${this.token}`,
+      },
+    })
+      .then((res) => {
+        if (!res.ok) {
+          return res.json().then((err) => Promise.reject(err));
+        }
+        return res.json();
+      })
+      .then((data) => ({
+        name: data.name || data.login,
+        login: data.login,
+        avatar_url: data.avatar_url,
+      }));
   };
 
   logout = () => {
