@@ -159,10 +159,10 @@
         console.log('✓ Custom backend registered');
         
         // config.ymlを読み込んでCMSを初期化
-        // <link>タグを使わず、明示的にconfig.ymlを指定して初期化
-        console.log('Initializing CMS with config.yml...');
-        CMS.init({
-          config: {
+        // CMS.init()は設定オブジェクトを直接受け取る（configプロパティでラップしない）
+        console.log('Initializing CMS...');
+        try {
+          CMS.init({
             backend: {
               name: "github",
               repo: "curokami/blog-project-",
@@ -189,9 +189,11 @@
                 ]
               }
             ]
-          }
-        });
-        console.log('✓ Decap CMS initialized successfully');
+          });
+          console.log('✓ Decap CMS initialized successfully');
+        } catch (error) {
+          console.error('✗ Failed to initialize CMS:', error);
+        }
       } else {
         console.log('Waiting for Decap CMS...');
         setTimeout(waitForCMS, 100);
