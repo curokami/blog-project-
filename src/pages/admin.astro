@@ -10,14 +10,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex" />
   <title>Content Manager</title>
+  <!-- Decap CMSの設定ファイルを読み込む -->
+  <link rel="cms-config-url" href="/admin/config.yml" />
 </head>
 <body>
   <!-- Decap CMSのマウントポイント -->
   <div id="nc-root"></div>
   
   <!-- Decap CMSスクリプトをCDNから読み込む（公式推奨方法） -->
-  <!-- 最新の安定版を使用（DOMエラーの修正が含まれている可能性） -->
-  <script src="https://unpkg.com/decap-cms@latest/dist/decap-cms.js"></script>
+  <!-- 参考リポジトリと同じバージョンを使用 -->
+  <script src="https://unpkg.com/decap-cms@3.3.3/dist/decap-cms.js"></script>
   
   <script>
     // カスタム認証プロバイダー（GitHub OAuth用）
@@ -210,39 +212,11 @@
       }
       
       // CMSを初期化
+      // config.ymlが自動的に読み込まれるので、CMS.init()を引数なしで呼び出す
       console.log('Initializing CMS...');
       try {
-        const config = {
-          backend: {
-            name: "github",
-            repo: "curokami/blog-project-",
-            branch: "main",
-            auth_endpoint: "/api/auth"
-          },
-          media_folder: "public/images",
-          public_folder: "/images",
-          collections: [
-            {
-              name: "posts",
-              label: "ブログ記事",
-              folder: "src/content/posts",
-              create: true,
-              slug: "{{year}}-{{month}}-{{day}}-{{slug}}",
-              fields: [
-                { label: "タイトル", name: "title", widget: "string" },
-                { label: "公開日", name: "pubDate", widget: "datetime" },
-                { label: "著者", name: "author", widget: "string" },
-                { label: "概要", name: "description", widget: "text" },
-                { label: "画像", name: "image", widget: "image" },
-                { label: "タグ", name: "tags", widget: "list", allow_add: true },
-                { label: "本文", name: "body", widget: "markdown" }
-              ]
-            }
-          ]
-        };
-        
-        console.log('CMS config:', config);
-        CMS.init(config);
+        // 参考リポジトリの実装に基づき、config.ymlから自動的に設定を読み込む
+        CMS.init();
         cmsInitialized = true;
         console.log('✓ Decap CMS initialized successfully');
       } catch (error) {
