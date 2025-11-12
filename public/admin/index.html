@@ -55,13 +55,40 @@
         script.src = 'https://unpkg.com/decap-cms-app@3.9.0/dist/decap-cms-app.js';
         script.onload = () => {
           console.log('✓ UMD bundle loaded');
-          // UMDバンドルがwindow.CMSを設定するのを待つ
-          setTimeout(() => {
-            const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS;
-            if (CMS && typeof initializeCMS === 'function') {
-              initializeCMS();
+          
+          // UMDバンドルがwindow.CMSを設定するのを待つ（複数回チェック）
+          let attempts = 0;
+          const maxAttempts = 100; // 5秒（50ms * 100）
+          
+          function checkCMS() {
+            const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS || window.netlifyCMS || window.decapCMS;
+            
+            console.log(`Checking for CMS... (${attempts}/${maxAttempts})`);
+            console.log('window.CMS:', typeof window.CMS, window.CMS);
+            console.log('window.DecapCMS:', typeof window.DecapCMS, window.DecapCMS);
+            console.log('window.NETLIFY_CMS:', typeof window.NETLIFY_CMS, window.NETLIFY_CMS);
+            console.log('All window keys:', Object.keys(window).filter(k => 
+              k.toLowerCase().includes('cms') || k.toLowerCase().includes('decap') || k.toLowerCase().includes('netlify')
+            ));
+            
+            if (CMS && typeof CMS.registerBackend === 'function' && typeof CMS.init === 'function') {
+              console.log('✓ CMS object found in UMD bundle');
+              if (typeof window.initializeCMS === 'function') {
+                window.initializeCMS();
+              } else {
+                console.error('✗ initializeCMS function not found');
+              }
+            } else if (attempts < maxAttempts) {
+              attempts++;
+              setTimeout(checkCMS, 50);
+            } else {
+              console.error('✗ CMS object not found in UMD bundle after maximum attempts');
+              console.error('All window properties:', Object.keys(window).slice(0, 50));
             }
-          }, 2000);
+          }
+          
+          // 少し待ってからチェック開始
+          setTimeout(checkCMS, 500);
         };
         script.onerror = () => {
           console.error('✗ UMD bundle failed to load');
