@@ -44,19 +44,40 @@
           this.authPromise = resolve;
           
           const authCallback = this.authCallback.bind(this);
-          window.removeEventListener("message", authCallback, false);
-          window.addEventListener("message", authCallback, false);
+          const authWindowRef = this; // thisの参照を保持
           
-          const auth_url = `${this.auth_url}?provider=github&site_id=${window.location.host}`;
+          // グローバルなmessageイベントリスナーを設定（デバッグ用）
+          const globalMessageHandler = (event) => {
+            console.log('=== Global message event received ===');
+            console.log('Event origin:', event.origin);
+            console.log('Current origin:', window.location.origin);
+            console.log('Event data:', event.data);
+            console.log('Event data type:', event.data?.type);
+            console.log('Event source:', event.source);
+            console.log('Auth window reference:', authWindowRef.authWindow);
+            console.log('Is from opener:', event.source === authWindowRef.authWindow);
+          };
+          
+          // 既存のリスナーを削除してから追加
+          window.removeEventListener("message", authCallback, false);
+          window.removeEventListener("message", globalMessageHandler, false);
+          window.addEventListener("message", authCallback, false);
+          window.addEventListener("message", globalMessageHandler, false);
           
           console.log('=== Opening auth window ===');
-          console.log('Auth URL:', auth_url);
+          console.log('Auth URL:', `${this.auth_url}?provider=github&site_id=${window.location.host}`);
+          console.log('Current origin:', window.location.origin);
+          console.log('Message event listener registered');
+          
+          const auth_url = `${this.auth_url}?provider=github&site_id=${window.location.host}`;
           this.authWindow = window.open(auth_url, "auth", "width=600,height=600");
           
           if (!this.authWindow) {
             reject(new Error("ポップアップがブロックされました。ポップアップブロッカーを無効にしてください。"));
             return;
           }
+          
+          console.log('Auth window opened:', this.authWindow);
           
           this.checkClosedInterval = setInterval(() => {
             if (this.authWindow?.closed) {
@@ -66,6 +87,7 @@
               }
               if (this.authPromise) {
                 window.removeEventListener("message", authCallback, false);
+                window.removeEventListener("message", globalMessageHandler, false);
                 this.authPromise = null;
                 reject(new Error("認証ウィンドウが閉じられました"));
               }
@@ -75,21 +97,29 @@
       }
 
       authCallback(event) {
-        console.log('=== Received message event ===');
+        console.log('=== authCallback: Received message event ===');
         console.log('Event origin:', event.origin);
         console.log('Expected origin:', window.location.origin);
         console.log('Event data:', event.data);
         console.log('Event data type:', event.data?.type);
+        console.log('Event data keys:', event.data ? Object.keys(event.data) : 'no data');
         console.log('Has payload:', !!event.data?.payload);
         console.log('Has token:', !!event.data?.payload?.token);
+        console.log('Event source:', event.source);
+        console.log('Auth window:', this.authWindow);
+        console.log('Is from auth window:', event.source === this.authWindow);
         
         if (event.origin !== window.location.origin) {
           console.warn(`✗ Ignored message from different origin: ${event.origin} (expected: ${window.location.origin})`);
           return;
         }
         
+        console.log('✓ Origin check passed');
+        
         if (event.data && event.data.type === 'authorization_response' && event.data.payload && event.data.payload.token) {
           console.log('✓ Valid authorization response received');
+          const token = event.data.payload.token;
+          console.log('Token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'no token');
           
           if (this.checkClosedInterval) {
             clearInterval(this.checkClosedInterval);
@@ -115,7 +145,8 @@
             hasData: !!event.data,
             type: event.data?.type,
             hasPayload: !!event.data?.payload,
-            hasToken: !!event.data?.payload?.token
+            hasToken: !!event.data?.payload?.token,
+            fullEventData: event.data
           });
         }
       }
