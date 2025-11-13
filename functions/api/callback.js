@@ -1,14 +1,21 @@
-// functions/api/callback.js (stateをURLパラメータから取得する版)
+// functions/api/callback.js (Cookieからstateを取得する版)
 export const onRequestGet = async ({ request, env }) => {
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
     const stateFromGithub = url.searchParams.get("state"); 
-    const expectedState = url.searchParams.get("expected_state"); // auth.jsから渡されたstate
 
-    console.log(`State verification: GitHub State: ${stateFromGithub}, Expected State: ${expectedState}`);
+    // Cookieヘッダーからstateを取得
+    const cookieHeader = request.headers.get("Cookie") || "";
+    const stateCookie = cookieHeader
+      .split('; ')
+      .find(row => row.startsWith('oauth_state='))
+      ?.split('=')[1];
 
-    if (!stateFromGithub || !expectedState || stateFromGithub !== expectedState) {
-      console.error(`State Mismatch: GitHub State: ${stateFromGithub || 'missing'}, Expected State: ${expectedState || 'missing'}`);
+    console.log(`State verification: GitHub State: ${stateFromGithub}, Cookie State: ${stateCookie || 'missing'}`);
+    console.log(`Cookie header: ${cookieHeader.substring(0, 100)}...`);
+
+    if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
+      console.error(`State Mismatch: GitHub State: ${stateFromGithub || 'missing'}, Cookie State: ${stateCookie || 'missing'}`);
       // デバッグ情報をHTMLレスポンスに含める（ブラウザで確認可能）
       return new Response(
         `<!DOCTYPE html>
@@ -17,7 +24,8 @@ export const onRequestGet = async ({ request, env }) => {
           <body>
             <h1>State Mismatch Error</h1>
             <p><strong>GitHub State:</strong> ${stateFromGithub || 'missing'}</p>
-            <p><strong>Expected State:</strong> ${expectedState || 'missing'}</p>
+            <p><strong>Cookie State:</strong> ${stateCookie || 'missing'}</p>
+            <p><strong>Cookie Header:</strong> ${cookieHeader || 'empty'}</p>
             <p>Please verify your GitHub OAuth App Callback URL is correct.</p>
             <p><small>Check Cloudflare Dashboard logs for server-side console.log output.</small></p>
           </body>
@@ -140,6 +148,8 @@ export const onRequestGet = async ({ request, env }) => {
       {
         headers: { 
           "Content-Type": "text/html",
+          // Cookieを削除
+          "Set-Cookie": `oauth_state=; Secure; HttpOnly; SameSite=None; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
         },
       }
     );
