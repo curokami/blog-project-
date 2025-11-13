@@ -101,11 +101,11 @@ export const onRequestGet = async ({ request, env }) => {
                   window.opener.postMessage(authData, targetOrigin);
                   console.log('✓ postMessage sent successfully');
                   
-                  // メッセージ送信後、少し待ってから閉じる（デバッグのため5秒待つ）
+                  // メッセージ送信後、少し待ってから閉じる（デバッグのため2分待つ）
                   setTimeout(() => {
                     console.log('Closing popup window...');
                     window.close();
-                  }, 5000); // 5秒待つ（デバッグ用）
+                  }, 120000); // 2分待つ（デバッグ用）
                 } else {
                   // openerがない、または閉じられている場合
                   const errorMsg = window.opener ? 'Window opener is closed' : 'Window opener is not available';
