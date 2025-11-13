@@ -22,6 +22,19 @@
   <script src="https://unpkg.com/decap-cms@3.3.3/dist/decap-cms.js"></script>
   
   <script>
+    // ページロード時にグローバルなmessageイベントリスナーを設定（デバッグ用）
+    window.addEventListener("message", (event) => {
+      console.log('=== [GLOBAL] Message event received ===');
+      console.log('Event origin:', event.origin);
+      console.log('Current origin:', window.location.origin);
+      console.log('Event data:', event.data);
+      console.log('Event data type:', event.data?.type);
+      console.log('Event source:', event.source);
+      console.log('Timestamp:', new Date().toISOString());
+    }, false);
+    
+    console.log('=== Page loaded, global message listener registered ===');
+    
     // カスタム認証プロバイダー（GitHub OAuth用）
     class CustomAuth {
       constructor(auth_url = "/api/auth") {
@@ -33,6 +46,10 @@
       }
 
       authenticate() {
+        console.log('=== [CustomAuth] authenticate() called ===');
+        console.log('CustomAuth instance:', this);
+        console.log('Auth URL:', this.auth_url);
+        
         this.authPromise = null;
         
         if (this.checkClosedInterval) {
