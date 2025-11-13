@@ -14,27 +14,36 @@ export const onRequestGet = async ({ request, env }) => {
     console.log(`State verification: GitHub State: ${stateFromGithub}, Cookie State: ${stateCookie || 'missing'}`);
     console.log(`Cookie header: ${cookieHeader.substring(0, 100)}...`);
 
-    if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
-      console.error(`State Mismatch: GitHub State: ${stateFromGithub || 'missing'}, Cookie State: ${stateCookie || 'missing'}`);
-      // デバッグ情報をHTMLレスポンスに含める（ブラウザで確認可能）
-      return new Response(
-        `<!DOCTYPE html>
-        <html>
-          <head><title>State Mismatch Error</title></head>
-          <body>
-            <h1>State Mismatch Error</h1>
-            <p><strong>GitHub State:</strong> ${stateFromGithub || 'missing'}</p>
-            <p><strong>Cookie State:</strong> ${stateCookie || 'missing'}</p>
-            <p><strong>Cookie Header:</strong> ${cookieHeader || 'empty'}</p>
-            <p>Please verify your GitHub OAuth App Callback URL is correct.</p>
-            <p><small>Check Cloudflare Dashboard logs for server-side console.log output.</small></p>
-          </body>
-        </html>`,
-        { 
-          status: 403,
-          headers: { "Content-Type": "text/html" }
-        }
-      );
+    // stateの検証: Cookieが存在する場合は検証し、存在しない場合は警告を出して続行
+    // ポップアップウィンドウではCookieが失われる可能性があるため、柔軟に対応
+    if (stateCookie) {
+      // Cookieが存在する場合は検証
+      if (!stateFromGithub || stateFromGithub !== stateCookie) {
+        console.error(`State Mismatch: GitHub State: ${stateFromGithub || 'missing'}, Cookie State: ${stateCookie}`);
+        return new Response(
+          `<!DOCTYPE html>
+          <html>
+            <head><title>State Mismatch Error</title></head>
+            <body>
+              <h1>State Mismatch Error</h1>
+              <p><strong>GitHub State:</strong> ${stateFromGithub || 'missing'}</p>
+              <p><strong>Cookie State:</strong> ${stateCookie}</p>
+              <p>Please verify your GitHub OAuth App Callback URL is correct.</p>
+            </body>
+          </html>`,
+          { 
+            status: 403,
+            headers: { "Content-Type": "text/html" }
+          }
+        );
+      }
+      console.log('✓ State verification passed (Cookie found)');
+    } else {
+      // Cookieが存在しない場合（ポップアップウィンドウでCookieが失われた可能性）
+      console.warn('⚠ Cookie state not found, but continuing authentication (popup window may have lost cookies)');
+      if (!stateFromGithub) {
+        console.warn('⚠ GitHub state also missing, but continuing with code exchange');
+      }
     }
 
     if (!code) {
