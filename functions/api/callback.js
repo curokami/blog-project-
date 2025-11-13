@@ -27,9 +27,25 @@ export const onRequestGet = async ({ request, env }) => {
 
     if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
       console.error(`State Mismatch: GitHub State: ${stateFromGithub}, Cookie State: ${stateCookie}`);
+      // デバッグ情報をHTMLレスポンスに含める（ブラウザで確認可能）
       return new Response(
-        `State mismatch. GitHub State: ${stateFromGithub || 'missing'}, Cookie State: ${stateCookie || 'missing'}. Please verify your GitHub OAuth App Callback URL is correct.`,
-        { status: 403 }
+        `<!DOCTYPE html>
+        <html>
+          <head><title>State Mismatch Error</title></head>
+          <body>
+            <h1>State Mismatch Error</h1>
+            <p><strong>GitHub State:</strong> ${stateFromGithub || 'missing'}</p>
+            <p><strong>Cookie State:</strong> ${stateCookie || 'missing'}</p>
+            <p><strong>Cookie Header:</strong> ${cookieHeader || 'empty'}</p>
+            <p><strong>Cookie Header Length:</strong> ${cookieHeader.length}</p>
+            <p>Please verify your GitHub OAuth App Callback URL is correct.</p>
+            <p><small>Check Cloudflare Dashboard logs for server-side console.log output.</small></p>
+          </body>
+        </html>`,
+        { 
+          status: 403,
+          headers: { "Content-Type": "text/html" }
+        }
       );
     }
 
