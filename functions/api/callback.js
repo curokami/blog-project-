@@ -4,14 +4,33 @@ export const onRequestGet = async ({ request, env }) => {
     const code = url.searchParams.get("code");
     const stateFromGithub = url.searchParams.get("state"); 
 
-    const stateCookie = request.headers.get("Cookie")
-      ?.split('; ')
+    // Cookieヘッダー全体を取得
+    const cookieHeader = request.headers.get("Cookie") || "";
+    console.log("Cookie header:", cookieHeader);
+    
+    // __Host-state と state の両方を試す（Cloudflare Pagesの環境によって異なる可能性がある）
+    let stateCookie = cookieHeader
+      .split('; ')
       .find(row => row.startsWith('__Host-state='))
       ?.split('=')[1];
+    
+    // __Host-stateが見つからない場合、通常のstateを試す
+    if (!stateCookie) {
+      stateCookie = cookieHeader
+        .split('; ')
+        .find(row => row.startsWith('state='))
+        ?.split('=')[1];
+    }
+
+    console.log(`State verification: GitHub State: ${stateFromGithub}, Cookie State: ${stateCookie}`);
+    console.log(`Cookie header length: ${cookieHeader.length}`);
 
     if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
       console.error(`State Mismatch: GitHub State: ${stateFromGithub}, Cookie State: ${stateCookie}`);
-      return new Response("State mismatch. Please verify your GitHub OAuth App Callback URL is correct.", { status: 403 });
+      return new Response(
+        `State mismatch. GitHub State: ${stateFromGithub || 'missing'}, Cookie State: ${stateCookie || 'missing'}. Please verify your GitHub OAuth App Callback URL is correct.`,
+        { status: 403 }
+      );
     }
 
     if (!code) {
@@ -125,7 +144,7 @@ export const onRequestGet = async ({ request, env }) => {
       {
         headers: { 
           "Content-Type": "text/html",
-          "Set-Cookie": `__Host-state=; Secure; HttpOnly; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
+          "Set-Cookie": `state=; Secure; HttpOnly; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
         },
       }
     );

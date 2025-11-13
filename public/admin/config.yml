@@ -24,3 +24,4 @@ collections:
       - { label: タグ, name: tags, widget: list, allow_add: true }
       - { label: 本文, name: body, widget: markdown }
 
+

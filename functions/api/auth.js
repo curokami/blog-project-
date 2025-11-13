@@ -20,7 +20,8 @@ export const onRequestGet = async ({ request, env }) => {
         status: 302,
         headers: {
             // 生成した state を Cookie に保存 (callback.js で検証する用)
-            "Set-Cookie": `__Host-state=${generatedState}; Secure; HttpOnly; SameSite=Lax; Path=/`,
+            // Cloudflare Pagesでは通常のCookie名を使用（__Host-プレフィックスは環境によって動作しない可能性がある）
+            "Set-Cookie": `state=${generatedState}; Secure; HttpOnly; SameSite=Lax; Path=/`,
             Location: authUrl.toString(),
         },
     });
