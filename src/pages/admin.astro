@@ -200,17 +200,26 @@
       mountPoint.innerHTML = '';
       
       // カスタムバックエンドを登録（CMS.init()の前に実行する必要がある）
-      if (!backendRegistered && typeof CMS.registerBackend === 'function') {
+      // 既に登録されているかチェック
+      const isBackendRegistered = CMS.backends && CMS.backends.github;
+      
+      if (!backendRegistered && !isBackendRegistered && typeof CMS.registerBackend === 'function') {
         console.log('Registering custom backend...');
         try {
           CMS.registerBackend("github", CustomAuth);
           backendRegistered = true;
           console.log('✓ Custom backend registered successfully');
         } catch (error) {
-          console.error('✗ Failed to register custom backend:', error);
-          console.error('Error details:', error.message, error.stack);
+          // 既に登録されている場合は警告を無視
+          if (error.message && error.message.includes('already registered')) {
+            console.log('⚠ Backend already registered, continuing...');
+            backendRegistered = true;
+          } else {
+            console.error('✗ Failed to register custom backend:', error);
+            console.error('Error details:', error.message, error.stack);
+          }
         }
-      } else if (!backendRegistered) {
+      } else if (!backendRegistered && !isBackendRegistered) {
         console.warn('⚠ CMS.registerBackend is not available, trying alternative method');
         // 代替方法: CMSオブジェクトに直接設定
         if (CMS.backends) {
@@ -218,6 +227,9 @@
           backendRegistered = true;
           console.log('✓ Custom backend registered via alternative method');
         }
+      } else if (isBackendRegistered) {
+        console.log('✓ Backend already registered, skipping registration');
+        backendRegistered = true;
       }
       
       // CMS.init()が利用可能になるまで待つ

@@ -1,32 +1,14 @@
-// functions/api/callback.js (redirect_uri 明示版)
+// functions/api/callback.js (stateをURLパラメータから取得する版)
 export const onRequestGet = async ({ request, env }) => {
     const url = new URL(request.url);
     const code = url.searchParams.get("code");
     const stateFromGithub = url.searchParams.get("state"); 
+    const expectedState = url.searchParams.get("expected_state"); // auth.jsから渡されたstate
 
-    // Cookieヘッダー全体を取得
-    const cookieHeader = request.headers.get("Cookie") || "";
-    console.log("Cookie header:", cookieHeader);
-    
-    // __Host-state と state の両方を試す（Cloudflare Pagesの環境によって異なる可能性がある）
-    let stateCookie = cookieHeader
-      .split('; ')
-      .find(row => row.startsWith('__Host-state='))
-      ?.split('=')[1];
-    
-    // __Host-stateが見つからない場合、通常のstateを試す
-    if (!stateCookie) {
-      stateCookie = cookieHeader
-        .split('; ')
-        .find(row => row.startsWith('state='))
-        ?.split('=')[1];
-    }
+    console.log(`State verification: GitHub State: ${stateFromGithub}, Expected State: ${expectedState}`);
 
-    console.log(`State verification: GitHub State: ${stateFromGithub}, Cookie State: ${stateCookie}`);
-    console.log(`Cookie header length: ${cookieHeader.length}`);
-
-    if (!stateFromGithub || !stateCookie || stateFromGithub !== stateCookie) {
-      console.error(`State Mismatch: GitHub State: ${stateFromGithub}, Cookie State: ${stateCookie}`);
+    if (!stateFromGithub || !expectedState || stateFromGithub !== expectedState) {
+      console.error(`State Mismatch: GitHub State: ${stateFromGithub || 'missing'}, Expected State: ${expectedState || 'missing'}`);
       // デバッグ情報をHTMLレスポンスに含める（ブラウザで確認可能）
       return new Response(
         `<!DOCTYPE html>
@@ -35,9 +17,7 @@ export const onRequestGet = async ({ request, env }) => {
           <body>
             <h1>State Mismatch Error</h1>
             <p><strong>GitHub State:</strong> ${stateFromGithub || 'missing'}</p>
-            <p><strong>Cookie State:</strong> ${stateCookie || 'missing'}</p>
-            <p><strong>Cookie Header:</strong> ${cookieHeader || 'empty'}</p>
-            <p><strong>Cookie Header Length:</strong> ${cookieHeader.length}</p>
+            <p><strong>Expected State:</strong> ${expectedState || 'missing'}</p>
             <p>Please verify your GitHub OAuth App Callback URL is correct.</p>
             <p><small>Check Cloudflare Dashboard logs for server-side console.log output.</small></p>
           </body>
@@ -160,7 +140,6 @@ export const onRequestGet = async ({ request, env }) => {
       {
         headers: { 
           "Content-Type": "text/html",
-          "Set-Cookie": `state=; Secure; HttpOnly; SameSite=Lax; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
         },
       }
     );
