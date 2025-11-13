@@ -125,13 +125,32 @@ export const onRequestGet = async ({ request, env }) => {
                     console.log('⚠ Using current origin as targetOrigin:', targetOrigin);
                   }
                   
-                  console.log('Sending auth data to opener:', {
-                    targetOrigin: targetOrigin,
-                    authData: { ...authData, payload: { ...authData.payload, token: '[REDACTED]' } }
-                  });
+                  console.log('=== [CALLBACK] Preparing to send postMessage ===');
+                  console.log('Target origin:', targetOrigin);
+                  console.log('Current origin:', window.location.origin);
+                  console.log('Opener origin:', window.opener?.location?.origin);
+                  console.log('Auth data type:', authData.type);
+                  console.log('Auth data payload keys:', Object.keys(authData.payload || {}));
+                  console.log('Token exists:', !!authData.payload?.token);
+                  console.log('Token length:', authData.payload?.token?.length || 0);
                   
-                  window.opener.postMessage(authData, targetOrigin);
-                  console.log('✓ postMessage sent successfully');
+                  try {
+                    console.log('=== [CALLBACK] Calling postMessage ===');
+                    window.opener.postMessage(authData, targetOrigin);
+                    console.log('✓ [CALLBACK] postMessage sent successfully');
+                    console.log('✓ [CALLBACK] Message sent to:', targetOrigin);
+                    console.log('✓ [CALLBACK] Message type:', authData.type);
+                    
+                    // 送信後にopenerがまだ存在するか確認
+                    setTimeout(() => {
+                      console.log('=== [CALLBACK] Post-send check ===');
+                      console.log('Opener still exists:', !!window.opener);
+                      console.log('Opener closed:', window.opener?.closed);
+                    }, 100);
+                  } catch (error) {
+                    console.error('✗ [CALLBACK] Error sending postMessage:', error);
+                    console.error('Error details:', error.message, error.stack);
+                  }
                   
                   // メッセージ送信後、少し待ってから閉じる（デバッグのため2分待つ）
                   setTimeout(() => {
