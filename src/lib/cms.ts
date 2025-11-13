@@ -10,7 +10,7 @@ import config from "./config";
 function initCMS() {
   try {
     // カスタムバックエンドを登録
-    CMS.registerBackend("github", CustomAuth);
+CMS.registerBackend("github", CustomAuth);
     
     // CMSを初期化
     CMS.init({ config });

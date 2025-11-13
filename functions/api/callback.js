@@ -66,6 +66,10 @@ export const onRequestGet = async ({ request, env }) => {
         <body>
           <script>
             (function() {
+              console.log('=== Callback page loaded ===');
+              console.log('window.opener exists:', !!window.opener);
+              console.log('window.opener.closed:', window.opener?.closed);
+              
               try {
                 if (window.opener && !window.opener.closed) {
                   const authData = {
@@ -81,27 +85,37 @@ export const onRequestGet = async ({ request, env }) => {
                   try {
                     // 同一オリジンの場合、opener.location.originにアクセス可能
                     targetOrigin = window.opener.location.origin;
+                    console.log('✓ Got targetOrigin from opener:', targetOrigin);
                   } catch (e) {
                     // クロスオリジンの場合（通常は発生しない）、現在のページのオリジンを使用
                     // Cloudflare Pagesでは、callbackとadminページは同一オリジンである必要がある
                     targetOrigin = window.location.origin;
+                    console.log('⚠ Using current origin as targetOrigin:', targetOrigin);
                   }
                   
-                  console.log('Sending auth data to opener:', targetOrigin, authData);
-                  window.opener.postMessage(authData, targetOrigin);
+                  console.log('Sending auth data to opener:', {
+                    targetOrigin: targetOrigin,
+                    authData: { ...authData, payload: { ...authData.payload, token: '[REDACTED]' } }
+                  });
                   
-                  // メッセージ送信後、少し待ってから閉じる
+                  window.opener.postMessage(authData, targetOrigin);
+                  console.log('✓ postMessage sent successfully');
+                  
+                  // メッセージ送信後、少し待ってから閉じる（デバッグのため5秒待つ）
                   setTimeout(() => {
+                    console.log('Closing popup window...');
                     window.close();
-                  }, 500);
+                  }, 5000); // 5秒待つ（デバッグ用）
                 } else {
                   // openerがない、または閉じられている場合
-                  document.body.innerHTML = '<p>認証が完了しました。このウィンドウを閉じてください。</p><p>もし自動的に閉じない場合は、手動で閉じてください。</p>';
-                  console.error('Window opener is not available or closed');
+                  const errorMsg = window.opener ? 'Window opener is closed' : 'Window opener is not available';
+                  console.error('✗', errorMsg);
+                  document.body.innerHTML = '<p>認証が完了しました。このウィンドウを閉じてください。</p><p>もし自動的に閉じない場合は、手動で閉じてください。</p><p>デバッグ: ' + errorMsg + '</p>';
                 }
               } catch (error) {
-                console.error('Error in auth callback:', error);
-                document.body.innerHTML = '<p>認証中にエラーが発生しました。このウィンドウを閉じて、もう一度お試しください。</p>';
+                console.error('✗ Error in auth callback:', error);
+                console.error('Error stack:', error.stack);
+                document.body.innerHTML = '<p>認証中にエラーが発生しました。このウィンドウを閉じて、もう一度お試しください。</p><p>エラー: ' + error.message + '</p>';
               }
             })();
           </script>

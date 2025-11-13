@@ -126,9 +126,9 @@ export class CustomAuth implements CmsAuthenticationProvider {
       .then((data) => {
         console.log("User info retrieved:", data.login);
         return {
-          name: data.name || data.login,
-          login: data.login,
-          avatar_url: data.avatar_url,
+        name: data.name || data.login,
+        login: data.login,
+        avatar_url: data.avatar_url,
         };
       })
       .catch((error) => {
