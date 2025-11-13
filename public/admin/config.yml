@@ -9,6 +9,9 @@ backend:
 media_folder: public/images
 public_folder: /images
 
+editor:
+  preview: false  # DOM差分由来のクラッシュ回避
+
 collections:
   - name: posts
     label: ブログ記事
@@ -23,6 +26,7 @@ collections:
       - { label: 画像, name: image, widget: image }
       - { label: タグ, name: tags, widget: list, allow_add: true }
       - { label: 本文, name: body, widget: markdown }
+
 
 
 
