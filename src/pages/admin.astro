@@ -22,6 +22,9 @@
   <script src="https://unpkg.com/decap-cms@3.3.3/dist/decap-cms.js"></script>
   
   <script>
+    // グローバルなCustomAuthインスタンスへの参照を保持
+    let globalCustomAuthInstance = null;
+    
     // ページロード時にグローバルなmessageイベントリスナーを設定（デバッグ用）
     window.addEventListener("message", (event) => {
       console.log('=== [GLOBAL] Message event received ===');
@@ -31,6 +34,18 @@
       console.log('Event data type:', event.data?.type);
       console.log('Event source:', event.source);
       console.log('Timestamp:', new Date().toISOString());
+      
+      // CustomAuthインスタンスが存在する場合、authCallbackも呼び出す
+      if (globalCustomAuthInstance && typeof globalCustomAuthInstance.authCallback === 'function') {
+        console.log('=== [GLOBAL] Forwarding to authCallback ===');
+        try {
+          globalCustomAuthInstance.authCallback(event);
+        } catch (error) {
+          console.error('✗ [GLOBAL] Error in authCallback:', error);
+        }
+      } else {
+        console.warn('⚠ [GLOBAL] CustomAuth instance not available yet');
+      }
     }, false);
     
     console.log('=== Page loaded, global message listener registered ===');
@@ -49,6 +64,10 @@
         console.log('=== [CustomAuth] authenticate() called ===');
         console.log('CustomAuth instance:', this);
         console.log('Auth URL:', this.auth_url);
+        
+        // グローバル変数にインスタンスを保存（グローバルリスナーから呼び出せるように）
+        globalCustomAuthInstance = this;
+        console.log('✓ [CustomAuth] Instance saved to global variable');
         
         this.authPromise = null;
         
