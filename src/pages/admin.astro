@@ -25,25 +25,12 @@
     // グローバルなCustomAuthインスタンスへの参照を保持
     let globalCustomAuthInstance = null;
     
-    // 認証メッセージをキューに保存（authenticate()が呼び出される前にpostMessageが届いた場合の対策）
-    let pendingAuthMessages = [];
-    
-    // ページロード時にグローバルなmessageイベントリスナーを設定
+    // ページロード時にグローバルなmessageイベントリスナーを設定（シンプル版）
     window.addEventListener("message", (event) => {
       const inst = globalCustomAuthInstance;
       
       if (!inst) {
-        console.warn('[GLOBAL] No CustomAuth instance yet');
-        // 認証メッセージの場合はキューに保存
-        const isAuthMessage = 
-          (typeof event.data === 'string' && (event.data.startsWith('authorization:github:success:') || event.data.startsWith('authorization:github:error:'))) ||
-          (event.data && typeof event.data === 'object' && (event.data.type === 'authorization_response' || event.data.type === 'authorization_error'));
-        
-        if (isAuthMessage) {
-          console.log('[GLOBAL] Saving message to queue');
-          pendingAuthMessages.push(event);
-        }
-        return;
+        return; // インスタンスが存在しない場合は何もしない
       }
       
       // CustomAuthインスタンスが存在する場合、handleAuthMessageを呼び出す
@@ -75,6 +62,9 @@
         
         // グローバル変数にインスタンスを保存（コンストラクタ時点でも保存）
         globalCustomAuthInstance = this;
+        if (typeof window !== "undefined") {
+          window.globalCustomAuthInstance = this;
+        }
         console.log('✓ [CustomAuth] Instance saved to globalCustomAuthInstance in constructor');
       }
 
@@ -91,6 +81,9 @@
         
         // グローバル変数にインスタンスを保存（グローバルリスナーから呼び出せるように）
         globalCustomAuthInstance = this;
+        if (typeof window !== "undefined") {
+          window.globalCustomAuthInstance = this;
+        }
         console.log('✓ [CustomAuth] Instance saved to global variable');
         
         // 既存のPromiseをクリア
@@ -133,23 +126,6 @@
             }
           }
         }, 1000);
-        
-        // キューに保存されたメッセージを処理（postMessageがauthenticate()より前に届いた場合）
-        if (pendingAuthMessages.length > 0) {
-          console.log(`=== [CustomAuth] Processing ${pendingAuthMessages.length} queued message(s) ===`);
-          setTimeout(() => {
-            while (pendingAuthMessages.length > 0) {
-              const queuedEvent = pendingAuthMessages.shift();
-              console.log('=== [CustomAuth] Processing queued message ===');
-              try {
-                this.handleAuthMessage(queuedEvent);
-                console.log('✓ [CustomAuth] Queued message processed successfully');
-              } catch (error) {
-                console.error('✗ [CustomAuth] Error processing queued message:', error);
-              }
-            }
-          }, 100);
-        }
         
         return this.authPromise;
       }
@@ -346,90 +322,34 @@
       // マウントポイントをクリア（DOMエラーを回避）
       mountPoint.innerHTML = '';
       
-      // カスタムバックエンドを登録（CMS.init()の前に実行する必要がある）
-      // Decap CMSが既にデフォルトのGitHubバックエンドを登録している可能性があるため、
-      // 既存のバックエンドを削除してからカスタムバックエンドを登録する
+      // カスタムバックエンドを正式に登録（CMS.init()の前に実行する必要がある）
       console.log('=== Backend registration process ===');
-      console.log('CMS.backends before:', CMS.backends);
-      console.log('CMS.registry exists:', !!CMS.registry);
-      console.log('CMS.registry.backends exists:', !!(CMS.registry && CMS.registry.backends));
+      console.log('Registering custom backend as "custom-github"...');
+      console.log('CustomAuth class:', CustomAuth);
+      console.log('CustomAuth methods:', Object.getOwnPropertyNames(CustomAuth.prototype));
       
-      // Decap CMSの内部レジストリから既存のバックエンドを削除
-      if (CMS.registry && CMS.registry.backends) {
-        console.log('CMS.registry.backends before:', CMS.registry.backends);
-        if (CMS.registry.backends.github) {
-          console.log('⚠ Existing github backend found in registry, attempting to delete...');
-          delete CMS.registry.backends.github;
-          console.log('✓ Deleted existing github backend from registry');
-        }
-      }
-      
-      // 既存のバックエンドを削除する方法を試す
-      if (CMS.backends && CMS.backends.github) {
-        console.log('⚠ Existing github backend found, attempting to override...');
-        delete CMS.backends.github;
-        console.log('✓ Deleted existing github backend');
-      }
-      
-      // バックエンドを登録
+      // バックエンドを正式に登録
       if (typeof CMS.registerBackend === 'function') {
-        console.log('Registering custom backend...');
-        console.log('CustomAuth class:', CustomAuth);
-        console.log('CustomAuth methods:', Object.getOwnPropertyNames(CustomAuth.prototype));
         try {
-          // エラーを無視して強制的に登録を試みる
-          CMS.registerBackend("github", CustomAuth);
+          CMS.registerBackend("custom-github", CustomAuth);
           backendRegistered = true;
-          console.log('✓ Custom backend registered successfully');
+          console.log('✓ Custom backend registered successfully as "custom-github"');
           
           // バックエンドが正しく登録されたか確認
-          if (CMS.backends && CMS.backends.github) {
-            console.log('✓ Backend confirmed in CMS.backends.github');
-            console.log('Registered backend:', CMS.backends.github);
-            console.log('Registered backend === CustomAuth:', CMS.backends.github === CustomAuth);
+          if (CMS.backends && CMS.backends["custom-github"]) {
+            console.log('✓ Backend confirmed in CMS.backends["custom-github"]');
+            console.log('Registered backend === CustomAuth:', CMS.backends["custom-github"] === CustomAuth);
           } else {
-            console.warn('⚠ Backend not found in CMS.backends.github after registration');
-            // 代替方法: CMSオブジェクトに直接設定
-            if (!CMS.backends) {
-              CMS.backends = {};
-            }
-            CMS.backends.github = CustomAuth;
-            console.log('✓ Backend set directly via CMS.backends.github');
-            console.log('Backend confirmed:', CMS.backends.github);
+            console.warn('⚠ Backend not found in CMS.backends["custom-github"] after registration');
           }
         } catch (error) {
-          // 既に登録されている場合は警告を無視して、直接設定を試みる
-          if (error.message && error.message.includes('already registered')) {
-            console.log('⚠ Backend already registered, attempting direct override...');
-            if (!CMS.backends) {
-              CMS.backends = {};
-            }
-            CMS.backends.github = CustomAuth;
-            backendRegistered = true;
-            console.log('✓ Backend overridden directly via CMS.backends.github');
-            console.log('Backend confirmed:', CMS.backends.github);
-          } else {
-            console.error('✗ Failed to register custom backend:', error);
-            console.error('Error details:', error.message, error.stack);
-            // エラーが発生しても直接設定を試みる
-            if (!CMS.backends) {
-              CMS.backends = {};
-            }
-            CMS.backends.github = CustomAuth;
-            backendRegistered = true;
-            console.log('✓ Backend set directly after error');
-          }
+          console.error('✗ Failed to register custom backend:', error);
+          console.error('Error details:', error.message, error.stack);
+          backendRegistered = false;
         }
       } else {
-        console.warn('⚠ CMS.registerBackend is not available, using direct assignment');
-        // 代替方法: CMSオブジェクトに直接設定
-        if (!CMS.backends) {
-          CMS.backends = {};
-        }
-        CMS.backends.github = CustomAuth;
-        backendRegistered = true;
-        console.log('✓ Custom backend registered via direct assignment');
-        console.log('Backend confirmed:', CMS.backends.github);
+        console.error('✗ CMS.registerBackend is not available');
+        backendRegistered = false;
       }
       
       console.log('CMS.backends after registration:', CMS.backends);
@@ -445,121 +365,10 @@
       // config.ymlが自動的に読み込まれるので、CMS.init()を引数なしで呼び出す
       console.log('Initializing CMS...');
       try {
-        // 参考リポジトリの実装に基づき、config.ymlから自動的に設定を読み込む
+        // config.ymlから自動的に設定を読み込む
         CMS.init();
         cmsInitialized = true;
         console.log('✓ Decap CMS initialized successfully');
-        
-        // CMS.init()の直後に、バックエンドが強制的に設定されているか確認
-        console.log('=== Immediate post-init check ===');
-        console.log('CMS.backends immediately after init:', CMS.backends);
-        console.log('CMS.backends.github immediately after init:', CMS.backends?.github);
-        
-        // バックエンドが設定されていない場合、強制的に設定
-        if (!CMS.backends || !CMS.backends.github || CMS.backends.github !== CustomAuth) {
-          console.log('⚠ Backend not set correctly after CMS.init(), forcing override...');
-          if (!CMS.backends) {
-            CMS.backends = {};
-          }
-          CMS.backends.github = CustomAuth;
-          console.log('✓ Backend forced after CMS.init()');
-        }
-        
-        // 初期化後に再度バックエンドを登録（CMS.init()の後に必要かもしれない）
-        setTimeout(() => {
-          console.log('=== Post-init backend registration ===');
-          if (typeof CMS.registerBackend === 'function') {
-            try {
-              CMS.registerBackend("github", CustomAuth);
-              console.log('✓ Backend re-registered after CMS.init()');
-            } catch (error) {
-              console.warn('⚠ Backend re-registration failed:', error.message);
-            }
-          }
-          
-          // バックエンドが認識されているか確認
-          console.log('=== Post-init backend check ===');
-          console.log('CMS.backends:', CMS.backends);
-          console.log('CMS.backends.github:', CMS.backends?.github);
-          console.log('CMS.backends.github === CustomAuth:', CMS.backends?.github === CustomAuth);
-          
-          // Decap CMSの内部状態を確認
-          console.log('CMS.store exists:', !!CMS.store);
-          console.log('CMS.store.getState exists:', !!(CMS.store && CMS.store.getState));
-          
-          if (CMS.store && CMS.store.getState) {
-            try {
-              const state = CMS.store.getState();
-              console.log('CMS store state:', state);
-              console.log('CMS store state keys:', Object.keys(state || {}));
-              
-              if (state.config && state.config.backend) {
-                console.log('CMS config backend:', state.config.backend);
-                console.log('CMS config backend name:', state.config.backend.name);
-              }
-              
-              // バックエンドインスタンスを確認
-              if (state.backend) {
-                console.log('CMS backend state:', state.backend);
-                console.log('CMS backend state keys:', Object.keys(state.backend || {}));
-                if (state.backend.backendClass) {
-                  console.log('CMS backend instance:', state.backend.backendClass);
-                  console.log('CMS backend instance === CustomAuth:', state.backend.backendClass === CustomAuth);
-                }
-              }
-            } catch (error) {
-              console.error('✗ Error accessing CMS store state:', error);
-            }
-          } else {
-            console.warn('⚠ CMS.store or CMS.store.getState not available');
-          }
-          
-          // Decap CMSのレジストリを確認
-          if (CMS.registry && CMS.registry.backends) {
-            console.log('CMS.registry.backends:', CMS.registry.backends);
-            console.log('CMS.registry.backends.github:', CMS.registry.backends.github);
-          }
-          
-          // Decap CMSがバックエンドインスタンスを作成するタイミングを監視
-          // Proxyを使用して、CMS.backends.githubへのアクセスを監視
-          if (CMS.backends && CMS.backends.github) {
-            const originalBackend = CMS.backends.github;
-            
-            // CustomAuthクラスのプロトタイプを監視して、インスタンス作成を検出
-            const originalAuthenticate = CustomAuth.prototype.authenticate;
-            CustomAuth.prototype.authenticate = function(...args) {
-              console.log('=== [PROXY] authenticate() called on CustomAuth instance ===');
-              console.log('CustomAuth instance:', this);
-              
-              // グローバル変数にインスタンスを保存
-              globalCustomAuthInstance = this;
-              console.log('✓ [PROXY] Instance saved to globalCustomAuthInstance');
-              
-              // キューに保存されたメッセージを処理
-              if (pendingAuthMessages.length > 0) {
-                console.log(`=== [PROXY] Processing ${pendingAuthMessages.length} queued message(s) ===`);
-                // authenticate()が完了するのを待ってから処理
-                setTimeout(() => {
-                  while (pendingAuthMessages.length > 0) {
-                    const queuedEvent = pendingAuthMessages.shift();
-                    console.log('=== [PROXY] Processing queued message ===');
-                    try {
-                      this.authCallback(queuedEvent);
-                      console.log('✓ [PROXY] Queued message processed successfully');
-                    } catch (error) {
-                      console.error('✗ [PROXY] Error processing queued message:', error);
-                    }
-                  }
-                }, 100);
-              }
-              
-              // 元のメソッドを呼び出す
-              return originalAuthenticate.apply(this, args);
-            };
-            
-            console.log('✓ Proxy installed on CustomAuth.prototype.authenticate');
-          }
-        }, 1000);
       } catch (error) {
         console.error('✗ Failed to initialize CMS:', error);
         console.error('Error details:', error.message, error.stack);
