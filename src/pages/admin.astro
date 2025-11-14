@@ -121,11 +121,19 @@
     // カスタム認証プロバイダー（GitHub OAuth用）
     class CustomAuth {
       constructor(auth_url = "/api/auth") {
+        console.log('=== [CustomAuth] Constructor called ===');
+        console.log('Auth URL:', auth_url);
+        console.log('CustomAuth instance (this):', this);
+        
         this.auth_url = auth_url;
         this.authWindow = null;
         this.authPromise = null;
         this.token = null;
         this.checkClosedInterval = null;
+        
+        // グローバル変数にインスタンスを保存（コンストラクタ時点でも保存）
+        globalCustomAuthInstance = this;
+        console.log('✓ [CustomAuth] Instance saved to globalCustomAuthInstance in constructor');
       }
 
       authenticate() {
@@ -519,6 +527,46 @@
           if (CMS.registry && CMS.registry.backends) {
             console.log('CMS.registry.backends:', CMS.registry.backends);
             console.log('CMS.registry.backends.github:', CMS.registry.backends.github);
+          }
+          
+          // Decap CMSがバックエンドインスタンスを作成するタイミングを監視
+          // Proxyを使用して、CMS.backends.githubへのアクセスを監視
+          if (CMS.backends && CMS.backends.github) {
+            const originalBackend = CMS.backends.github;
+            
+            // CustomAuthクラスのプロトタイプを監視して、インスタンス作成を検出
+            const originalAuthenticate = CustomAuth.prototype.authenticate;
+            CustomAuth.prototype.authenticate = function(...args) {
+              console.log('=== [PROXY] authenticate() called on CustomAuth instance ===');
+              console.log('CustomAuth instance:', this);
+              
+              // グローバル変数にインスタンスを保存
+              globalCustomAuthInstance = this;
+              console.log('✓ [PROXY] Instance saved to globalCustomAuthInstance');
+              
+              // キューに保存されたメッセージを処理
+              if (pendingAuthMessages.length > 0) {
+                console.log(`=== [PROXY] Processing ${pendingAuthMessages.length} queued message(s) ===`);
+                // authenticate()が完了するのを待ってから処理
+                setTimeout(() => {
+                  while (pendingAuthMessages.length > 0) {
+                    const queuedEvent = pendingAuthMessages.shift();
+                    console.log('=== [PROXY] Processing queued message ===');
+                    try {
+                      this.authCallback(queuedEvent);
+                      console.log('✓ [PROXY] Queued message processed successfully');
+                    } catch (error) {
+                      console.error('✗ [PROXY] Error processing queued message:', error);
+                    }
+                  }
+                }, 100);
+              }
+              
+              // 元のメソッドを呼び出す
+              return originalAuthenticate.apply(this, args);
+            };
+            
+            console.log('✓ Proxy installed on CustomAuth.prototype.authenticate');
           }
         }, 1000);
       } catch (error) {
