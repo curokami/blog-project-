@@ -22,8 +22,12 @@ export const onRequestGet = async ({ request, env }) => {
         console.error(`State Mismatch: GitHub State: ${stateFromGithub || 'missing'}, Cookie State: ${stateCookie}`);
         return new Response(
           `<!DOCTYPE html>
-          <html>
-            <head><title>State Mismatch Error</title></head>
+          <html lang="ja">
+            <head>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>State Mismatch Error</title>
+            </head>
             <body>
               <h1>State Mismatch Error</h1>
               <p><strong>GitHub State:</strong> ${stateFromGithub || 'missing'}</p>
@@ -33,7 +37,7 @@ export const onRequestGet = async ({ request, env }) => {
           </html>`,
           { 
             status: 403,
-            headers: { "Content-Type": "text/html" }
+            headers: { "Content-Type": "text/html; charset=utf-8" }
           }
         );
       }
@@ -73,8 +77,12 @@ export const onRequestGet = async ({ request, env }) => {
         console.error(errorMsg);
         return new Response(
             `<!DOCTYPE html>
-            <html>
-              <head><title>Token Exchange Failed</title></head>
+            <html lang="ja">
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Token Exchange Failed</title>
+              </head>
               <body>
                 <script>
                   if (window.opener && !window.opener.closed) {
@@ -89,7 +97,7 @@ export const onRequestGet = async ({ request, env }) => {
                 <p>${errorMsg}</p>
               </body>
             </html>`,
-            { status: 500, headers: { "Content-Type": "text/html" } }
+            { status: 500, headers: { "Content-Type": "text/html; charset=utf-8" } }
         );
     }
 
@@ -103,8 +111,12 @@ export const onRequestGet = async ({ request, env }) => {
         console.error(errorMsg);
         return new Response(
             `<!DOCTYPE html>
-            <html>
-              <head><title>GitHub API Error</title></head>
+            <html lang="ja">
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>GitHub API Error</title>
+              </head>
               <body>
                 <script>
                   if (window.opener && !window.opener.closed) {
@@ -119,7 +131,7 @@ export const onRequestGet = async ({ request, env }) => {
                 <p>${errorMsg}</p>
               </body>
             </html>`,
-            { status: 401, headers: { "Content-Type": "text/html" } }
+            { status: 401, headers: { "Content-Type": "text/html; charset=utf-8" } }
         );
     }
 
@@ -128,8 +140,12 @@ export const onRequestGet = async ({ request, env }) => {
         console.error(errorMsg);
         return new Response(
             `<!DOCTYPE html>
-            <html>
-              <head><title>No Token</title></head>
+            <html lang="ja">
+              <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>No Token</title>
+              </head>
               <body>
                 <script>
                   if (window.opener && !window.opener.closed) {
@@ -144,7 +160,7 @@ export const onRequestGet = async ({ request, env }) => {
                 <p>${errorMsg}</p>
               </body>
             </html>`,
-            { status: 500, headers: { "Content-Type": "text/html" } }
+            { status: 500, headers: { "Content-Type": "text/html; charset=utf-8" } }
         );
     }
 
@@ -153,8 +169,10 @@ export const onRequestGet = async ({ request, env }) => {
     return new Response(
       `
       <!DOCTYPE html>
-      <html>
+      <html lang="ja">
         <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Auth Callback</title>
         </head>
         <body>
@@ -253,7 +271,7 @@ export const onRequestGet = async ({ request, env }) => {
       `,
       {
         headers: { 
-          "Content-Type": "text/html",
+          "Content-Type": "text/html; charset=utf-8",
           // Cookieを削除
           "Set-Cookie": `oauth_state=; Secure; HttpOnly; SameSite=None; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`,
         },
