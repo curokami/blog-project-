@@ -46,8 +46,26 @@
       console.log('authCallback type:', typeof globalCustomAuthInstance?.authCallback);
       
       // エラーメッセージの処理（CustomAuthインスタンスがなくても処理できるように）
-      if (event.data && event.data.type === 'authorization_error') {
-        console.error('=== [GLOBAL] Authorization error received ===');
+      // Decap CMS標準の文字列形式: "authorization:github:error:{error}"
+      if (typeof event.data === 'string' && event.data.startsWith('authorization:github:error:')) {
+        console.error('=== [GLOBAL] Authorization error received (Decap CMS standard format) ===');
+        const errorMsg = event.data.replace('authorization:github:error:', '');
+        console.error('Error:', errorMsg);
+        if (globalCustomAuthInstance && typeof globalCustomAuthInstance.authCallback === 'function') {
+          console.log('=== [GLOBAL] Forwarding error to authCallback ===');
+          try {
+            globalCustomAuthInstance.authCallback(event);
+            console.log('✓ [GLOBAL] Error forwarded to authCallback');
+          } catch (error) {
+            console.error('✗ [GLOBAL] Error in authCallback:', error);
+          }
+        }
+        return;
+      }
+      
+      // 後方互換性: 古いオブジェクト形式のエラーメッセージ
+      if (event.data && typeof event.data === 'object' && event.data.type === 'authorization_error') {
+        console.error('=== [GLOBAL] Authorization error received (legacy format) ===');
         console.error('Error:', event.data.payload?.error);
         if (globalCustomAuthInstance && typeof globalCustomAuthInstance.authCallback === 'function') {
           console.log('=== [GLOBAL] Forwarding error to authCallback ===');
@@ -78,7 +96,12 @@
         
         // CustomAuthインスタンスが利用可能になるまで待ってから再試行
         // これは、postMessageがauthenticate()の呼び出しより前に届いた場合の対策
-        if (event.data && (event.data.type === 'authorization_response' || event.data.type === 'authorization_error')) {
+        // Decap CMS標準の文字列形式または古いオブジェクト形式のメッセージをチェック
+        const isAuthMessage = 
+          (typeof event.data === 'string' && (event.data.startsWith('authorization:github:success:') || event.data.startsWith('authorization:github:error:'))) ||
+          (event.data && typeof event.data === 'object' && (event.data.type === 'authorization_response' || event.data.type === 'authorization_error'));
+        
+        if (isAuthMessage) {
           console.log('=== [GLOBAL] Saving message to queue (waiting for CustomAuth instance) ===');
           pendingAuthMessages.push(event);
           console.log('Pending messages count:', pendingAuthMessages.length);
@@ -109,6 +132,41 @@
             } else if (retryCount >= maxRetries) {
               console.error('✗ [GLOBAL] Max retries reached, CustomAuth instance still not available');
               console.error('✗ [GLOBAL] Pending messages count:', pendingAuthMessages.length);
+              
+              // 最後の手段: CMS.backends.githubから直接インスタンスを作成して処理
+              console.log('=== [GLOBAL] Last resort: Creating CustomAuth instance directly ===');
+              if (CMS.backends && CMS.backends.github && CMS.backends.github === CustomAuth) {
+                console.log('✓ CustomAuth class found in CMS.backends.github');
+                try {
+                  // CustomAuthクラスから直接インスタンスを作成
+                  const authInstance = new CustomAuth("/api/auth");
+                  console.log('✓ CustomAuth instance created directly');
+                  console.log('Instance:', authInstance);
+                  
+                  // グローバル変数に保存
+                  globalCustomAuthInstance = authInstance;
+                  console.log('✓ Instance saved to globalCustomAuthInstance');
+                  
+                  // キューに保存されたメッセージを処理
+                  while (pendingAuthMessages.length > 0) {
+                    const queuedEvent = pendingAuthMessages.shift();
+                    console.log('=== [GLOBAL] Processing queued message with direct instance ===');
+                    try {
+                      authInstance.authCallback(queuedEvent);
+                      console.log('✓ [GLOBAL] Queued message processed successfully with direct instance');
+                    } catch (error) {
+                      console.error('✗ [GLOBAL] Error processing queued message:', error);
+                    }
+                  }
+                } catch (error) {
+                  console.error('✗ [GLOBAL] Error creating CustomAuth instance:', error);
+                }
+              } else {
+                console.error('✗ [GLOBAL] CustomAuth class not found in CMS.backends.github');
+                console.error('CMS.backends:', CMS.backends);
+                console.error('CMS.backends.github:', CMS.backends?.github);
+              }
+              
               clearInterval(retryInterval);
             }
           }, 200); // 200msごとに再試行
@@ -228,10 +286,7 @@
         console.log('Event origin:', event.origin);
         console.log('Expected origin:', window.location.origin);
         console.log('Event data:', event.data);
-        console.log('Event data type:', event.data?.type);
-        console.log('Event data keys:', event.data ? Object.keys(event.data) : 'no data');
-        console.log('Has payload:', !!event.data?.payload);
-        console.log('Has token:', !!event.data?.payload?.token);
+        console.log('Event data type:', typeof event.data);
         console.log('Event source:', event.source);
         console.log('Auth window:', this.authWindow);
         console.log('Is from auth window:', event.source === this.authWindow);
@@ -243,64 +298,124 @@
         
         console.log('✓ Origin check passed');
         
-        // エラーメッセージの処理
-        if (event.data && event.data.type === 'authorization_error') {
-          console.error('✗ Authorization error received');
-          console.error('Error:', event.data.payload?.error);
+        // Decap CMS標準の文字列形式メッセージを処理
+        // 形式: "authorization:github:success:{token}" または "authorization:github:error:{error}"
+        if (typeof event.data === 'string') {
+          console.log('✓ Decap CMS standard string message format detected');
           
-          if (this.checkClosedInterval) {
-            clearInterval(this.checkClosedInterval);
-            this.checkClosedInterval = null;
-            console.log('✓ Closed interval cleared');
+          if (event.data.startsWith('authorization:github:success:')) {
+            // 成功メッセージ: "authorization:github:success:{token}"
+            const token = event.data.replace('authorization:github:success:', '');
+            console.log('✓ Valid authorization success message received');
+            console.log('Token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'no token');
+            
+            if (this.checkClosedInterval) {
+              clearInterval(this.checkClosedInterval);
+              this.checkClosedInterval = null;
+              console.log('✓ Closed interval cleared');
+            }
+            
+            this.token = token;
+            console.log('✓ Token stored, authentication successful');
+            
+            if (this.authPromise) {
+              console.log('✓ Resolving auth promise');
+              this.authPromise.resolve(true);
+              this.authPromise = null;
+            } else {
+              console.warn('⚠ No auth promise to resolve');
+            }
+            
+            this.cleanup();
+            console.log('✓ Cleanup completed');
+            return;
+          } else if (event.data.startsWith('authorization:github:error:')) {
+            // エラーメッセージ: "authorization:github:error:{error}"
+            const errorMsg = event.data.replace('authorization:github:error:', '');
+            console.error('✗ Authorization error received');
+            console.error('Error:', errorMsg);
+            
+            if (this.checkClosedInterval) {
+              clearInterval(this.checkClosedInterval);
+              this.checkClosedInterval = null;
+              console.log('✓ Closed interval cleared');
+            }
+            
+            if (this.authPromise) {
+              console.log('✗ Rejecting auth promise with error');
+              this.authPromise.reject(new Error(errorMsg || '認証エラーが発生しました'));
+              this.authPromise = null;
+            } else {
+              console.warn('⚠ No auth promise to reject');
+            }
+            
+            this.cleanup();
+            console.log('✓ Cleanup completed after error');
+            return;
           }
-          
-          if (this.authPromise) {
-            console.log('✗ Rejecting auth promise with error');
-            this.authPromise.reject(new Error(event.data.payload?.error || '認証エラーが発生しました'));
-            this.authPromise = null;
-          } else {
-            console.warn('⚠ No auth promise to reject');
-          }
-          
-          this.cleanup();
-          console.log('✓ Cleanup completed after error');
-          return;
         }
         
-        // 成功レスポンスの処理
-        if (event.data && event.data.type === 'authorization_response' && event.data.payload && event.data.payload.token) {
-          console.log('✓ Valid authorization response received');
-          const token = event.data.payload.token;
-          console.log('Token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'no token');
-          
-          if (this.checkClosedInterval) {
-            clearInterval(this.checkClosedInterval);
-            this.checkClosedInterval = null;
-            console.log('✓ Closed interval cleared');
+        // 後方互換性: 古いオブジェクト形式のメッセージも処理
+        if (event.data && typeof event.data === 'object') {
+          // エラーメッセージの処理（古い形式）
+          if (event.data.type === 'authorization_error') {
+            console.error('✗ Authorization error received (legacy format)');
+            console.error('Error:', event.data.payload?.error);
+            
+            if (this.checkClosedInterval) {
+              clearInterval(this.checkClosedInterval);
+              this.checkClosedInterval = null;
+              console.log('✓ Closed interval cleared');
+            }
+            
+            if (this.authPromise) {
+              console.log('✗ Rejecting auth promise with error');
+              this.authPromise.reject(new Error(event.data.payload?.error || '認証エラーが発生しました'));
+              this.authPromise = null;
+            } else {
+              console.warn('⚠ No auth promise to reject');
+            }
+            
+            this.cleanup();
+            console.log('✓ Cleanup completed after error');
+            return;
           }
           
-          this.token = event.data.payload.token;
-          console.log('✓ Token stored, authentication successful');
-          
-          if (this.authPromise) {
-            console.log('✓ Resolving auth promise');
-            this.authPromise.resolve(true);
-            this.authPromise = null;
-          } else {
-            console.warn('⚠ No auth promise to resolve');
+          // 成功レスポンスの処理（古い形式）
+          if (event.data.type === 'authorization_response' && event.data.payload && event.data.payload.token) {
+            console.log('✓ Valid authorization response received (legacy format)');
+            const token = event.data.payload.token;
+            console.log('Token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'no token');
+            
+            if (this.checkClosedInterval) {
+              clearInterval(this.checkClosedInterval);
+              this.checkClosedInterval = null;
+              console.log('✓ Closed interval cleared');
+            }
+            
+            this.token = event.data.payload.token;
+            console.log('✓ Token stored, authentication successful');
+            
+            if (this.authPromise) {
+              console.log('✓ Resolving auth promise');
+              this.authPromise.resolve(true);
+              this.authPromise = null;
+            } else {
+              console.warn('⚠ No auth promise to resolve');
+            }
+            
+            this.cleanup();
+            console.log('✓ Cleanup completed');
+            return;
           }
-          
-          this.cleanup();
-          console.log('✓ Cleanup completed');
-        } else {
-          console.warn('✗ Invalid message format:', {
-            hasData: !!event.data,
-            type: event.data?.type,
-            hasPayload: !!event.data?.payload,
-            hasToken: !!event.data?.payload?.token,
-            fullEventData: event.data
-          });
         }
+        
+        console.warn('✗ Invalid message format:', {
+          hasData: !!event.data,
+          dataType: typeof event.data,
+          dataValue: typeof event.data === 'string' ? event.data.substring(0, 100) : event.data,
+          fullEventData: event.data
+        });
       }
 
       cleanup() {

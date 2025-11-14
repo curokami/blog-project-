@@ -86,10 +86,10 @@ export const onRequestGet = async ({ request, env }) => {
               <body>
                 <script>
                   if (window.opener && !window.opener.closed) {
-                    window.opener.postMessage({
-                      type: 'authorization_error',
-                      payload: { error: '${errorMsg.replace(/'/g, "\\'")}' }
-                    }, window.location.origin);
+                    // Decap CMS標準のエラーメッセージ形式: "authorization:github:error:{error}"
+                    const errorMsgEscaped = ${JSON.stringify(errorMsg)};
+                    const errorMessage = "authorization:github:error:" + errorMsgEscaped;
+                    window.opener.postMessage(errorMessage, window.location.origin);
                   }
                   setTimeout(() => window.close(), 3000);
                 </script>
@@ -120,10 +120,10 @@ export const onRequestGet = async ({ request, env }) => {
               <body>
                 <script>
                   if (window.opener && !window.opener.closed) {
-                    window.opener.postMessage({
-                      type: 'authorization_error',
-                      payload: { error: '${errorMsg.replace(/'/g, "\\'")}' }
-                    }, window.location.origin);
+                    // Decap CMS標準のエラーメッセージ形式: "authorization:github:error:{error}"
+                    const errorMsgEscaped = ${JSON.stringify(errorMsg)};
+                    const errorMessage = "authorization:github:error:" + errorMsgEscaped;
+                    window.opener.postMessage(errorMessage, window.location.origin);
                   }
                   setTimeout(() => window.close(), 3000);
                 </script>
@@ -192,13 +192,10 @@ export const onRequestGet = async ({ request, env }) => {
               
               try {
                 if (window.opener && !window.opener.closed) {
-                  const authData = {
-                    type: 'authorization_response',
-                    payload: { 
-                      token: "${result.access_token}", 
-                      provider: "github"
-                    }
-                  };
+                  // Decap CMS標準のメッセージ形式を使用
+                  // 形式: "authorization:github:success:{token}"
+                  const token = "${result.access_token}";
+                  const authMessage = "authorization:github:success:" + token;
                   
                   // オリジンを動的に取得（Cloudflare Pages用）
                   let targetOrigin;
@@ -217,18 +214,19 @@ export const onRequestGet = async ({ request, env }) => {
                   console.log('Target origin:', targetOrigin);
                   console.log('Current origin:', window.location.origin);
                   console.log('Opener origin:', window.opener?.location?.origin);
-                  console.log('Auth data type:', authData.type);
-                  console.log('Auth data payload keys:', Object.keys(authData.payload || {}));
-                  console.log('Token exists:', !!authData.payload?.token);
-                  console.log('Token length:', authData.payload?.token?.length || 0);
+                  console.log('Auth message format: Decap CMS standard string');
+                  console.log('Token exists:', !!token);
+                  console.log('Token length:', token?.length || 0);
                   
                   try {
                     statusEl.textContent = 'postMessageを送信中...';
                     console.log('=== [CALLBACK] Calling postMessage ===');
-                    window.opener.postMessage(authData, targetOrigin);
+                    console.log('Message:', authMessage.substring(0, 50) + '...');
+                    // Decap CMS標準形式で送信（文字列）
+                    window.opener.postMessage(authMessage, targetOrigin);
                     console.log('✓ [CALLBACK] postMessage sent successfully');
                     console.log('✓ [CALLBACK] Message sent to:', targetOrigin);
-                    console.log('✓ [CALLBACK] Message type:', authData.type);
+                    console.log('✓ [CALLBACK] Message format: Decap CMS standard');
                     statusEl.textContent = '✓ 認証トークンを送信しました。ウィンドウを閉じます...';
                     
                     // 送信後にopenerがまだ存在するか確認
