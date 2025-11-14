@@ -158,8 +158,16 @@ export const onRequestGet = async ({ request, env }) => {
           <title>Auth Callback</title>
         </head>
         <body>
+          <div style="padding: 20px; font-family: sans-serif;">
+            <h1>認証処理中...</h1>
+            <p>このウィンドウは自動的に閉じられます。</p>
+            <p id="status">処理中...</p>
+          </div>
           <script>
             (function() {
+              const statusEl = document.getElementById('status');
+              statusEl.textContent = 'ページが読み込まれました。';
+              
               console.log('=== Callback page loaded ===');
               console.log('window.opener exists:', !!window.opener);
               console.log('window.opener.closed:', window.opener?.closed);
@@ -197,11 +205,13 @@ export const onRequestGet = async ({ request, env }) => {
                   console.log('Token length:', authData.payload?.token?.length || 0);
                   
                   try {
+                    statusEl.textContent = 'postMessageを送信中...';
                     console.log('=== [CALLBACK] Calling postMessage ===');
                     window.opener.postMessage(authData, targetOrigin);
                     console.log('✓ [CALLBACK] postMessage sent successfully');
                     console.log('✓ [CALLBACK] Message sent to:', targetOrigin);
                     console.log('✓ [CALLBACK] Message type:', authData.type);
+                    statusEl.textContent = '✓ 認証トークンを送信しました。ウィンドウを閉じます...';
                     
                     // 送信後にopenerがまだ存在するか確認
                     setTimeout(() => {
@@ -210,6 +220,7 @@ export const onRequestGet = async ({ request, env }) => {
                       console.log('Opener closed:', window.opener?.closed);
                     }, 100);
                   } catch (error) {
+                    statusEl.textContent = '✗ エラー: ' + error.message;
                     console.error('✗ [CALLBACK] Error sending postMessage:', error);
                     console.error('Error details:', error.message, error.stack);
                   }
@@ -217,18 +228,23 @@ export const onRequestGet = async ({ request, env }) => {
                   // メッセージ送信後、少し待ってから閉じる（デバッグのため2分待つ）
                   setTimeout(() => {
                     console.log('Closing popup window...');
+                    statusEl.textContent = 'ウィンドウを閉じています...';
                     window.close();
                   }, 120000); // 2分待つ（デバッグ用）
                 } else {
                   // openerがない、または閉じられている場合
                   const errorMsg = window.opener ? 'Window opener is closed' : 'Window opener is not available';
                   console.error('✗', errorMsg);
-                  document.body.innerHTML = '<p>認証が完了しました。このウィンドウを閉じてください。</p><p>もし自動的に閉じない場合は、手動で閉じてください。</p><p>デバッグ: ' + errorMsg + '</p>';
+                  statusEl.textContent = '✗ エラー: ' + errorMsg;
+                  document.body.innerHTML = '<div style="padding: 20px; font-family: sans-serif;"><h1>認証エラー</h1><p>認証が完了しました。このウィンドウを閉じてください。</p><p>もし自動的に閉じない場合は、手動で閉じてください。</p><p>デバッグ: ' + errorMsg + '</p></div>';
                 }
               } catch (error) {
                 console.error('✗ Error in auth callback:', error);
                 console.error('Error stack:', error.stack);
-                document.body.innerHTML = '<p>認証中にエラーが発生しました。このウィンドウを閉じて、もう一度お試しください。</p><p>エラー: ' + error.message + '</p>';
+                if (statusEl) {
+                  statusEl.textContent = '✗ エラー: ' + error.message;
+                }
+                document.body.innerHTML = '<div style="padding: 20px; font-family: sans-serif;"><h1>認証エラー</h1><p>認証中にエラーが発生しました。このウィンドウを閉じて、もう一度お試しください。</p><p>エラー: ' + error.message + '</p></div>';
               }
             })();
           </script>
