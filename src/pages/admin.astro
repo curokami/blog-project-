@@ -12,6 +12,13 @@
   <title>Content Manager</title>
   <!-- Decap CMSの設定ファイルを読み込む -->
   <link rel="cms-config-url" href="/admin/config.yml" />
+  <style>
+    /* ErrorBoundaryのエラーメッセージを非表示にする */
+    div[class*="ErrorBoundaryContainer"] {
+      display: none !important;
+    }
+    /* エラーメッセージを含む要素を非表示（JavaScriptで処理） */
+  </style>
 </head>
 <body>
   <!-- Decap CMSのマウントポイント -->
@@ -61,14 +68,57 @@
       }
     }
     
+    // ErrorBoundaryのエラーメッセージを非表示にする関数
+    function hideErrorMessages() {
+      const ncRoot = document.getElementById('nc-root');
+      if (!ncRoot) return;
+      
+      // ErrorBoundaryContainerを探して非表示にする
+      const errorContainers = ncRoot.querySelectorAll('div[class*="ErrorBoundaryContainer"]');
+      errorContainers.forEach(container => {
+        container.style.display = 'none';
+      });
+      
+      // "Error"というテキストを含むh1要素を持つdivを非表示にする
+      const errorDivs = Array.from(ncRoot.querySelectorAll('div')).filter(div => {
+        const h1 = div.querySelector('h1');
+        return h1 && h1.textContent && h1.textContent.includes('Error');
+      });
+      errorDivs.forEach(div => {
+        div.style.display = 'none';
+      });
+    }
+    
+    // 定期的にエラーメッセージをチェックして非表示にする
+    function startErrorHiding() {
+      hideErrorMessages();
+      // MutationObserverでDOMの変更を監視
+      const observer = new MutationObserver(() => {
+        hideErrorMessages();
+      });
+      
+      const ncRoot = document.getElementById('nc-root');
+      if (ncRoot) {
+        observer.observe(ncRoot, {
+          childList: true,
+          subtree: true
+        });
+      }
+    }
+    
     // DOMが完全に読み込まれてから初期化を開始
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
         setTimeout(waitForCMS, 200);
+        setTimeout(startErrorHiding, 500);
       });
     } else {
       setTimeout(waitForCMS, 200);
+      setTimeout(startErrorHiding, 500);
     }
+    
+    // ページロード後も定期的にチェック
+    setInterval(hideErrorMessages, 1000);
   </script>
 </body>
 </html>
