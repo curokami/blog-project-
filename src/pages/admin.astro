@@ -434,8 +434,19 @@
         cmsInitialized = true;
         console.log('✓ Decap CMS initialized successfully');
         
-        // 初期化後にバックエンドが認識されているか確認
+        // 初期化後に再度バックエンドを登録（CMS.init()の後に必要かもしれない）
         setTimeout(() => {
+          console.log('=== Post-init backend registration ===');
+          if (typeof CMS.registerBackend === 'function') {
+            try {
+              CMS.registerBackend("github", CustomAuth);
+              console.log('✓ Backend re-registered after CMS.init()');
+            } catch (error) {
+              console.warn('⚠ Backend re-registration failed:', error.message);
+            }
+          }
+          
+          // バックエンドが認識されているか確認
           console.log('=== Post-init backend check ===');
           console.log('CMS.backends:', CMS.backends);
           console.log('CMS.backends.github:', CMS.backends?.github);
@@ -447,6 +458,13 @@
             console.log('CMS store state:', state);
             if (state.config && state.config.backend) {
               console.log('CMS config backend:', state.config.backend);
+              console.log('CMS config backend name:', state.config.backend.name);
+            }
+            
+            // バックエンドインスタンスを確認
+            if (state.backend && state.backend.backendClass) {
+              console.log('CMS backend instance:', state.backend.backendClass);
+              console.log('CMS backend instance === CustomAuth:', state.backend.backendClass === CustomAuth);
             }
           }
         }, 1000);
