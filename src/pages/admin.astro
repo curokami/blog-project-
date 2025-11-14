@@ -25,6 +25,9 @@
     // グローバルなCustomAuthインスタンスへの参照を保持
     let globalCustomAuthInstance = null;
     
+    // 認証メッセージをキューに保存（authenticate()が呼び出される前にpostMessageが届いた場合の対策）
+    let pendingAuthMessages = [];
+    
     // ページロード時にグローバルなmessageイベントリスナーを設定（デバッグ用）
     window.addEventListener("message", (event) => {
       console.log('=== [GLOBAL] Message event received ===');
@@ -76,25 +79,36 @@
         // CustomAuthインスタンスが利用可能になるまで待ってから再試行
         // これは、postMessageがauthenticate()の呼び出しより前に届いた場合の対策
         if (event.data && (event.data.type === 'authorization_response' || event.data.type === 'authorization_error')) {
+          console.log('=== [GLOBAL] Saving message to queue (waiting for CustomAuth instance) ===');
+          pendingAuthMessages.push(event);
+          console.log('Pending messages count:', pendingAuthMessages.length);
+          
           console.log('=== [GLOBAL] Retrying after delay (waiting for CustomAuth instance) ===');
           let retryCount = 0;
-          const maxRetries = 10;
+          const maxRetries = 20; // 20回に増やす（4秒間待つ）
           const retryInterval = setInterval(() => {
             retryCount++;
             console.log(`=== [GLOBAL] Retry attempt ${retryCount}/${maxRetries} ===`);
             console.log('globalCustomAuthInstance exists:', !!globalCustomAuthInstance);
             
             if (globalCustomAuthInstance && typeof globalCustomAuthInstance.authCallback === 'function') {
-              console.log('✓ [GLOBAL] CustomAuth instance found, forwarding message');
+              console.log('✓ [GLOBAL] CustomAuth instance found, processing queued messages');
               clearInterval(retryInterval);
-              try {
-                globalCustomAuthInstance.authCallback(event);
-                console.log('✓ [GLOBAL] authCallback completed after retry');
-              } catch (error) {
-                console.error('✗ [GLOBAL] Error in authCallback after retry:', error);
+              
+              // キューに保存されたメッセージを処理
+              while (pendingAuthMessages.length > 0) {
+                const queuedEvent = pendingAuthMessages.shift();
+                console.log('=== [GLOBAL] Processing queued message ===');
+                try {
+                  globalCustomAuthInstance.authCallback(queuedEvent);
+                  console.log('✓ [GLOBAL] Queued message processed successfully');
+                } catch (error) {
+                  console.error('✗ [GLOBAL] Error processing queued message:', error);
+                }
               }
             } else if (retryCount >= maxRetries) {
               console.error('✗ [GLOBAL] Max retries reached, CustomAuth instance still not available');
+              console.error('✗ [GLOBAL] Pending messages count:', pendingAuthMessages.length);
               clearInterval(retryInterval);
             }
           }, 200); // 200msごとに再試行
@@ -122,6 +136,21 @@
         // グローバル変数にインスタンスを保存（グローバルリスナーから呼び出せるように）
         globalCustomAuthInstance = this;
         console.log('✓ [CustomAuth] Instance saved to global variable');
+        
+        // キューに保存されたメッセージを処理（postMessageがauthenticate()より前に届いた場合）
+        if (pendingAuthMessages.length > 0) {
+          console.log(`=== [CustomAuth] Processing ${pendingAuthMessages.length} queued message(s) ===`);
+          while (pendingAuthMessages.length > 0) {
+            const queuedEvent = pendingAuthMessages.shift();
+            console.log('=== [CustomAuth] Processing queued message ===');
+            try {
+              this.authCallback(queuedEvent);
+              console.log('✓ [CustomAuth] Queued message processed successfully');
+            } catch (error) {
+              console.error('✗ [CustomAuth] Error processing queued message:', error);
+            }
+          }
+        }
         
         this.authPromise = null;
         
