@@ -387,6 +387,18 @@
       // 既存のバックエンドを削除してからカスタムバックエンドを登録する
       console.log('=== Backend registration process ===');
       console.log('CMS.backends before:', CMS.backends);
+      console.log('CMS.registry exists:', !!CMS.registry);
+      console.log('CMS.registry.backends exists:', !!(CMS.registry && CMS.registry.backends));
+      
+      // Decap CMSの内部レジストリから既存のバックエンドを削除
+      if (CMS.registry && CMS.registry.backends) {
+        console.log('CMS.registry.backends before:', CMS.registry.backends);
+        if (CMS.registry.backends.github) {
+          console.log('⚠ Existing github backend found in registry, attempting to delete...');
+          delete CMS.registry.backends.github;
+          console.log('✓ Deleted existing github backend from registry');
+        }
+      }
       
       // 既存のバックエンドを削除する方法を試す
       if (CMS.backends && CMS.backends.github) {
@@ -473,6 +485,21 @@
         CMS.init();
         cmsInitialized = true;
         console.log('✓ Decap CMS initialized successfully');
+        
+        // CMS.init()の直後に、バックエンドが強制的に設定されているか確認
+        console.log('=== Immediate post-init check ===');
+        console.log('CMS.backends immediately after init:', CMS.backends);
+        console.log('CMS.backends.github immediately after init:', CMS.backends?.github);
+        
+        // バックエンドが設定されていない場合、強制的に設定
+        if (!CMS.backends || !CMS.backends.github || CMS.backends.github !== CustomAuth) {
+          console.log('⚠ Backend not set correctly after CMS.init(), forcing override...');
+          if (!CMS.backends) {
+            CMS.backends = {};
+          }
+          CMS.backends.github = CustomAuth;
+          console.log('✓ Backend forced after CMS.init()');
+        }
         
         // 初期化後に再度バックエンドを登録（CMS.init()の後に必要かもしれない）
         setTimeout(() => {
