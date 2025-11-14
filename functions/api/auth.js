@@ -1,4 +1,4 @@
-// functions/api/auth.js (redirect_uriをGitHub OAuth Appの設定と一致させる版)
+// functions/api/auth.js (Decap CMS標準の動作に合わせた版)
 export const onRequestGet = async ({ request, env }) => {
     if (!env.GITHUB_CLIENT_ID) {
         return new Response("GitHub client credentials are not configured.", { status: 500 });
@@ -8,31 +8,55 @@ export const onRequestGet = async ({ request, env }) => {
     const generatedState = Math.random().toString(36).slice(2) + Date.now().toString();
 
     // redirect_uriはGitHub OAuth Appの設定と完全に一致させる必要がある
-    // パラメータを含めない（GitHubがCallback URLと完全一致を要求するため）
     const redirectUri = `${new URL(request.url).origin}/api/callback`;
     
     console.log('=== [AUTH] OAuth initiation ===');
     console.log('Request origin:', new URL(request.url).origin);
     console.log('Redirect URI:', redirectUri);
-    console.log('Expected GitHub OAuth App Callback URL: https://blog-project-398.pages.dev/api/callback');
-    console.log('Match:', redirectUri === 'https://blog-project-398.pages.dev/api/callback');
 
     const authUrl = new URL("https://github.com/login/oauth/authorize");
     authUrl.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
     authUrl.searchParams.set("scope", "repo");
-    authUrl.searchParams.set("state", generatedState); // 生成した state を GitHub に渡す
-    authUrl.searchParams.set("redirect_uri", redirectUri); // GitHub OAuth Appの設定と一致させる
+    authUrl.searchParams.set("state", generatedState);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
     
     console.log('Auth URL:', authUrl.toString());
-    console.log('Client ID:', env.GITHUB_CLIENT_ID ? `${env.GITHUB_CLIENT_ID.substring(0, 10)}...` : 'missing');
 
-    return new Response(null, {
-        status: 302,
-        headers: {
-            // stateをCookieに保存（callback.jsで検証する用）
-            // SameSite=None; Secure を設定してポップアップウィンドウでもCookieが共有されるようにする
-            "Set-Cookie": `oauth_state=${generatedState}; Secure; HttpOnly; SameSite=None; Path=/; Max-Age=600`,
-            Location: authUrl.toString(),
-        },
-    });
+    // Decap CMS標準の動作: HTMLページを返し、authorizing:githubメッセージを送信してからリダイレクト
+    return new Response(
+        `<!DOCTYPE html>
+        <html lang="ja">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Authorizing...</title>
+          </head>
+          <body>
+            <script>
+              // Decap CMS標準の動作: authorizing:githubメッセージを送信
+              if (window.opener && !window.opener.closed) {
+                try {
+                  window.opener.postMessage("authorizing:github", window.location.origin);
+                  console.log('✓ Sent authorizing:github message');
+                } catch (error) {
+                  console.error('✗ Error sending authorizing message:', error);
+                }
+              }
+              
+              // メッセージ送信後、GitHub OAuthにリダイレクト
+              setTimeout(() => {
+                window.location.href = ${JSON.stringify(authUrl.toString())};
+              }, 100);
+            </script>
+            <p>認証を開始しています...</p>
+          </body>
+        </html>`,
+        {
+            headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                // stateをCookieに保存（callback.jsで検証する用）
+                "Set-Cookie": `oauth_state=${generatedState}; Secure; HttpOnly; SameSite=None; Path=/; Max-Age=600`,
+            },
+        }
+    );
 };
