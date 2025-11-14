@@ -375,14 +375,25 @@
       mountPoint.innerHTML = '';
       
       // カスタムバックエンドを登録（CMS.init()の前に実行する必要がある）
-      // 既に登録されているかチェック
-      const isBackendRegistered = CMS.backends && CMS.backends.github;
+      // Decap CMSが既にデフォルトのGitHubバックエンドを登録している可能性があるため、
+      // 既存のバックエンドを削除してからカスタムバックエンドを登録する
+      console.log('=== Backend registration process ===');
+      console.log('CMS.backends before:', CMS.backends);
       
-      if (!backendRegistered && !isBackendRegistered && typeof CMS.registerBackend === 'function') {
+      // 既存のバックエンドを削除する方法を試す
+      if (CMS.backends && CMS.backends.github) {
+        console.log('⚠ Existing github backend found, attempting to override...');
+        delete CMS.backends.github;
+        console.log('✓ Deleted existing github backend');
+      }
+      
+      // バックエンドを登録
+      if (typeof CMS.registerBackend === 'function') {
         console.log('Registering custom backend...');
         console.log('CustomAuth class:', CustomAuth);
         console.log('CustomAuth methods:', Object.getOwnPropertyNames(CustomAuth.prototype));
         try {
+          // エラーを無視して強制的に登録を試みる
           CMS.registerBackend("github", CustomAuth);
           backendRegistered = true;
           console.log('✓ Custom backend registered successfully');
@@ -391,32 +402,53 @@
           if (CMS.backends && CMS.backends.github) {
             console.log('✓ Backend confirmed in CMS.backends.github');
             console.log('Registered backend:', CMS.backends.github);
+            console.log('Registered backend === CustomAuth:', CMS.backends.github === CustomAuth);
           } else {
             console.warn('⚠ Backend not found in CMS.backends.github after registration');
+            // 代替方法: CMSオブジェクトに直接設定
+            if (!CMS.backends) {
+              CMS.backends = {};
+            }
+            CMS.backends.github = CustomAuth;
+            console.log('✓ Backend set directly via CMS.backends.github');
+            console.log('Backend confirmed:', CMS.backends.github);
           }
         } catch (error) {
-          // 既に登録されている場合は警告を無視
+          // 既に登録されている場合は警告を無視して、直接設定を試みる
           if (error.message && error.message.includes('already registered')) {
-            console.log('⚠ Backend already registered, continuing...');
+            console.log('⚠ Backend already registered, attempting direct override...');
+            if (!CMS.backends) {
+              CMS.backends = {};
+            }
+            CMS.backends.github = CustomAuth;
             backendRegistered = true;
+            console.log('✓ Backend overridden directly via CMS.backends.github');
+            console.log('Backend confirmed:', CMS.backends.github);
           } else {
             console.error('✗ Failed to register custom backend:', error);
             console.error('Error details:', error.message, error.stack);
+            // エラーが発生しても直接設定を試みる
+            if (!CMS.backends) {
+              CMS.backends = {};
+            }
+            CMS.backends.github = CustomAuth;
+            backendRegistered = true;
+            console.log('✓ Backend set directly after error');
           }
         }
-      } else if (!backendRegistered && !isBackendRegistered) {
-        console.warn('⚠ CMS.registerBackend is not available, trying alternative method');
+      } else {
+        console.warn('⚠ CMS.registerBackend is not available, using direct assignment');
         // 代替方法: CMSオブジェクトに直接設定
-        if (CMS.backends) {
-          CMS.backends.github = CustomAuth;
-          backendRegistered = true;
-          console.log('✓ Custom backend registered via alternative method');
-          console.log('Backend confirmed:', CMS.backends.github);
+        if (!CMS.backends) {
+          CMS.backends = {};
         }
-      } else if (isBackendRegistered) {
-        console.log('✓ Backend already registered, skipping registration');
+        CMS.backends.github = CustomAuth;
         backendRegistered = true;
+        console.log('✓ Custom backend registered via direct assignment');
+        console.log('Backend confirmed:', CMS.backends.github);
       }
+      
+      console.log('CMS.backends after registration:', CMS.backends);
       
       // CMS.init()が利用可能になるまで待つ
       if (typeof CMS.init !== 'function') {
@@ -453,19 +485,40 @@
           console.log('CMS.backends.github === CustomAuth:', CMS.backends?.github === CustomAuth);
           
           // Decap CMSの内部状態を確認
+          console.log('CMS.store exists:', !!CMS.store);
+          console.log('CMS.store.getState exists:', !!(CMS.store && CMS.store.getState));
+          
           if (CMS.store && CMS.store.getState) {
-            const state = CMS.store.getState();
-            console.log('CMS store state:', state);
-            if (state.config && state.config.backend) {
-              console.log('CMS config backend:', state.config.backend);
-              console.log('CMS config backend name:', state.config.backend.name);
+            try {
+              const state = CMS.store.getState();
+              console.log('CMS store state:', state);
+              console.log('CMS store state keys:', Object.keys(state || {}));
+              
+              if (state.config && state.config.backend) {
+                console.log('CMS config backend:', state.config.backend);
+                console.log('CMS config backend name:', state.config.backend.name);
+              }
+              
+              // バックエンドインスタンスを確認
+              if (state.backend) {
+                console.log('CMS backend state:', state.backend);
+                console.log('CMS backend state keys:', Object.keys(state.backend || {}));
+                if (state.backend.backendClass) {
+                  console.log('CMS backend instance:', state.backend.backendClass);
+                  console.log('CMS backend instance === CustomAuth:', state.backend.backendClass === CustomAuth);
+                }
+              }
+            } catch (error) {
+              console.error('✗ Error accessing CMS store state:', error);
             }
-            
-            // バックエンドインスタンスを確認
-            if (state.backend && state.backend.backendClass) {
-              console.log('CMS backend instance:', state.backend.backendClass);
-              console.log('CMS backend instance === CustomAuth:', state.backend.backendClass === CustomAuth);
-            }
+          } else {
+            console.warn('⚠ CMS.store or CMS.store.getState not available');
+          }
+          
+          // Decap CMSのレジストリを確認
+          if (CMS.registry && CMS.registry.backends) {
+            console.log('CMS.registry.backends:', CMS.registry.backends);
+            console.log('CMS.registry.backends.github:', CMS.registry.backends.github);
           }
         }, 1000);
       } catch (error) {
