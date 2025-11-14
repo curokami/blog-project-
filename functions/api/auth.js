@@ -10,12 +10,21 @@ export const onRequestGet = async ({ request, env }) => {
     // redirect_uriはGitHub OAuth Appの設定と完全に一致させる必要がある
     // パラメータを含めない（GitHubがCallback URLと完全一致を要求するため）
     const redirectUri = `${new URL(request.url).origin}/api/callback`;
+    
+    console.log('=== [AUTH] OAuth initiation ===');
+    console.log('Request origin:', new URL(request.url).origin);
+    console.log('Redirect URI:', redirectUri);
+    console.log('Expected GitHub OAuth App Callback URL: https://blog-project-398.pages.dev/api/callback');
+    console.log('Match:', redirectUri === 'https://blog-project-398.pages.dev/api/callback');
 
     const authUrl = new URL("https://github.com/login/oauth/authorize");
     authUrl.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
     authUrl.searchParams.set("scope", "repo");
     authUrl.searchParams.set("state", generatedState); // 生成した state を GitHub に渡す
     authUrl.searchParams.set("redirect_uri", redirectUri); // GitHub OAuth Appの設定と一致させる
+    
+    console.log('Auth URL:', authUrl.toString());
+    console.log('Client ID:', env.GITHUB_CLIENT_ID ? `${env.GITHUB_CLIENT_ID.substring(0, 10)}...` : 'missing');
 
     return new Response(null, {
         status: 302,
