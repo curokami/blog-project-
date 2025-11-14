@@ -65,25 +65,87 @@ export const onRequestGet = async ({ request, env }) => {
     });
 
     const responseBody = await response.text();
+    console.log(`GitHub token exchange response status: ${response.status}`);
+    console.log(`GitHub token exchange response body: ${responseBody.substring(0, 200)}...`);
 
     if (response.status !== 200) {
+        const errorMsg = `GitHub Token Exchange Failed (Status ${response.status}): ${responseBody}`;
+        console.error(errorMsg);
         return new Response(
-            `GitHub Token Exchange Failed (Status ${response.status}): ${responseBody}`,
-            { status: 500, headers: { "Content-Type": "text/plain" } }
+            `<!DOCTYPE html>
+            <html>
+              <head><title>Token Exchange Failed</title></head>
+              <body>
+                <script>
+                  if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                      type: 'authorization_error',
+                      payload: { error: '${errorMsg.replace(/'/g, "\\'")}' }
+                    }, window.location.origin);
+                  }
+                  setTimeout(() => window.close(), 3000);
+                </script>
+                <h1>Token Exchange Failed</h1>
+                <p>${errorMsg}</p>
+              </body>
+            </html>`,
+            { status: 500, headers: { "Content-Type": "text/html" } }
         );
     }
 
     const result = JSON.parse(responseBody);
+    console.log(`Parsed result keys: ${Object.keys(result).join(', ')}`);
+    console.log(`Has error: ${!!result.error}`);
+    console.log(`Has access_token: ${!!result.access_token}`);
 
     if (result.error) {
+        const errorMsg = `GitHub API Error: ${result.error_description || result.error}`;
+        console.error(errorMsg);
         return new Response(
-            `GitHub API Error: ${result.error_description || result.error}`,
-            { status: 401, headers: { "Content-Type": "text/plain" } }
+            `<!DOCTYPE html>
+            <html>
+              <head><title>GitHub API Error</title></head>
+              <body>
+                <script>
+                  if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                      type: 'authorization_error',
+                      payload: { error: '${errorMsg.replace(/'/g, "\\'")}' }
+                    }, window.location.origin);
+                  }
+                  setTimeout(() => window.close(), 3000);
+                </script>
+                <h1>GitHub API Error</h1>
+                <p>${errorMsg}</p>
+              </body>
+            </html>`,
+            { status: 401, headers: { "Content-Type": "text/html" } }
         );
     }
 
     if (!result.access_token) {
-        return new Response("No access_token found in response.", { status: 500, headers: { "Content-Type": "text/plain" } });
+        const errorMsg = "No access_token found in response.";
+        console.error(errorMsg);
+        return new Response(
+            `<!DOCTYPE html>
+            <html>
+              <head><title>No Token</title></head>
+              <body>
+                <script>
+                  if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({
+                      type: 'authorization_error',
+                      payload: { error: '${errorMsg}' }
+                    }, window.location.origin);
+                  }
+                  setTimeout(() => window.close(), 3000);
+                </script>
+                <h1>No Token</h1>
+                <p>${errorMsg}</p>
+              </body>
+            </html>`,
+            { status: 500, headers: { "Content-Type": "text/html" } }
+        );
     }
 
     // トークンを一時的に保存するためのセッションストレージの代わりに、URLフラグメントを使用
