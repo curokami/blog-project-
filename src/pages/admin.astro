@@ -380,10 +380,20 @@
       
       if (!backendRegistered && !isBackendRegistered && typeof CMS.registerBackend === 'function') {
         console.log('Registering custom backend...');
+        console.log('CustomAuth class:', CustomAuth);
+        console.log('CustomAuth methods:', Object.getOwnPropertyNames(CustomAuth.prototype));
         try {
           CMS.registerBackend("github", CustomAuth);
           backendRegistered = true;
           console.log('✓ Custom backend registered successfully');
+          
+          // バックエンドが正しく登録されたか確認
+          if (CMS.backends && CMS.backends.github) {
+            console.log('✓ Backend confirmed in CMS.backends.github');
+            console.log('Registered backend:', CMS.backends.github);
+          } else {
+            console.warn('⚠ Backend not found in CMS.backends.github after registration');
+          }
         } catch (error) {
           // 既に登録されている場合は警告を無視
           if (error.message && error.message.includes('already registered')) {
@@ -401,6 +411,7 @@
           CMS.backends.github = CustomAuth;
           backendRegistered = true;
           console.log('✓ Custom backend registered via alternative method');
+          console.log('Backend confirmed:', CMS.backends.github);
         }
       } else if (isBackendRegistered) {
         console.log('✓ Backend already registered, skipping registration');
@@ -422,6 +433,23 @@
         CMS.init();
         cmsInitialized = true;
         console.log('✓ Decap CMS initialized successfully');
+        
+        // 初期化後にバックエンドが認識されているか確認
+        setTimeout(() => {
+          console.log('=== Post-init backend check ===');
+          console.log('CMS.backends:', CMS.backends);
+          console.log('CMS.backends.github:', CMS.backends?.github);
+          console.log('CMS.backends.github === CustomAuth:', CMS.backends?.github === CustomAuth);
+          
+          // Decap CMSの内部状態を確認
+          if (CMS.store && CMS.store.getState) {
+            const state = CMS.store.getState();
+            console.log('CMS store state:', state);
+            if (state.config && state.config.backend) {
+              console.log('CMS config backend:', state.config.backend);
+            }
+          }
+        }, 1000);
       } catch (error) {
         console.error('✗ Failed to initialize CMS:', error);
         console.error('Error details:', error.message, error.stack);
