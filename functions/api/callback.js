@@ -86,9 +86,11 @@ export const onRequestGet = async ({ request, env }) => {
               <body>
                 <script>
                   if (window.opener && !window.opener.closed) {
-                    // Decap CMS標準のエラーメッセージ形式: "authorization:github:error:{error}"
-                    const errorMsgEscaped = ${JSON.stringify(errorMsg)};
-                    const errorMessage = "authorization:github:error:" + errorMsgEscaped;
+                    // Decap CMS標準のエラーメッセージ形式: "authorization:github:error:" + JSON.stringify({ message: 'error' })
+                    const errorData = {
+                      message: ${JSON.stringify(errorMsg)}
+                    };
+                    const errorMessage = "authorization:github:error:" + JSON.stringify(errorData);
                     window.opener.postMessage(errorMessage, window.location.origin);
                   }
                   setTimeout(() => window.close(), 3000);
@@ -120,9 +122,11 @@ export const onRequestGet = async ({ request, env }) => {
               <body>
                 <script>
                   if (window.opener && !window.opener.closed) {
-                    // Decap CMS標準のエラーメッセージ形式: "authorization:github:error:{error}"
-                    const errorMsgEscaped = ${JSON.stringify(errorMsg)};
-                    const errorMessage = "authorization:github:error:" + errorMsgEscaped;
+                    // Decap CMS標準のエラーメッセージ形式: "authorization:github:error:" + JSON.stringify({ message: 'error' })
+                    const errorData = {
+                      message: ${JSON.stringify(errorMsg)}
+                    };
+                    const errorMessage = "authorization:github:error:" + JSON.stringify(errorData);
                     window.opener.postMessage(errorMessage, window.location.origin);
                   }
                   setTimeout(() => window.close(), 3000);
@@ -192,14 +196,14 @@ export const onRequestGet = async ({ request, env }) => {
               
               try {
                 if (window.opener && !window.opener.closed) {
-                  // Decap CMS標準のメッセージ形式を使用（オブジェクト形式）
-                  // Netlify CMS/Decap CMS標準形式: { type: 'authorization', provider: 'github', token: 'TOKEN' }
+                  // Decap CMS標準のメッセージ形式を使用（プレフィックス + JSON文字列形式）
+                  // 形式: "authorization:github:success:" + JSON.stringify({ token: 'TOKEN', provider: 'github' })
                   const token = "${result.access_token}";
-                  const authMessage = {
-                    type: 'authorization',
-                    provider: 'github',
-                    token: token
+                  const authData = {
+                    token: token,
+                    provider: "github"
                   };
+                  const authMessage = "authorization:github:success:" + JSON.stringify(authData);
                   
                   // オリジンを動的に取得（Cloudflare Pages用）
                   let targetOrigin;
@@ -218,19 +222,19 @@ export const onRequestGet = async ({ request, env }) => {
                   console.log('Target origin:', targetOrigin);
                   console.log('Current origin:', window.location.origin);
                   console.log('Opener origin:', window.opener?.location?.origin);
-                  console.log('Auth message format: Decap CMS standard object');
+                  console.log('Auth message format: Decap CMS standard (prefix + JSON string)');
                   console.log('Token exists:', !!token);
                   console.log('Token length:', token?.length || 0);
                   
                   try {
                     statusEl.textContent = 'postMessageを送信中...';
                     console.log('=== [CALLBACK] Calling postMessage ===');
-                    console.log('Message:', JSON.stringify(authMessage));
-                    // Decap CMS標準形式で送信（オブジェクト）
+                    console.log('Message:', authMessage.substring(0, 100) + '...');
+                    // Decap CMS標準形式で送信（プレフィックス + JSON文字列）
                     window.opener.postMessage(authMessage, targetOrigin);
                     console.log('✓ [CALLBACK] postMessage sent successfully');
                     console.log('✓ [CALLBACK] Message sent to:', targetOrigin);
-                    console.log('✓ [CALLBACK] Message format: Decap CMS standard object');
+                    console.log('✓ [CALLBACK] Message format: Decap CMS standard (prefix + JSON string)');
                     statusEl.textContent = '✓ 認証トークンを送信しました。ウィンドウを閉じます...';
                     
                     // 送信後にopenerがまだ存在するか確認
