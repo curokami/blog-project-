@@ -18,288 +18,10 @@
   <div id="nc-root"></div>
   
   <!-- Decap CMSスクリプトをCDNから読み込む（公式推奨方法） -->
-  <!-- 参考リポジトリと同じバージョンを使用 -->
   <script src="https://unpkg.com/decap-cms@3.3.3/dist/decap-cms.js"></script>
   
   <script>
-    // グローバルなCustomAuthインスタンスへの参照を保持
-    let globalCustomAuthInstance = null;
-    
-    // ページロード時にグローバルなmessageイベントリスナーを設定（シンプル版）
-    window.addEventListener("message", (event) => {
-      const inst = globalCustomAuthInstance;
-      
-      if (!inst) {
-        return; // インスタンスが存在しない場合は何もしない
-      }
-      
-      // CustomAuthインスタンスが存在する場合、handleAuthMessageを呼び出す
-      if (typeof inst.handleAuthMessage === 'function') {
-        try {
-          inst.handleAuthMessage(event);
-        } catch (error) {
-          console.error('[GLOBAL] Error in handleAuthMessage:', error);
-        }
-      }
-    }, false);
-    
-    console.log('=== Page loaded, global message listener registered ===');
-    
-    // カスタム認証プロバイダー（GitHub OAuth用）
-    class CustomAuth {
-      constructor(auth_url = "/api/auth") {
-        console.log('=== [CustomAuth] Constructor called ===');
-        console.log('Auth URL:', auth_url);
-        console.log('CustomAuth instance (this):', this);
-        
-        this.auth_url = auth_url;
-        this.authWindow = null;
-        this.authPromise = null;
-        this.authResolve = null;
-        this.authReject = null;
-        this.token = null;
-        this.checkClosedInterval = null;
-        
-        // グローバル変数にインスタンスを保存（コンストラクタ時点でも保存）
-        globalCustomAuthInstance = this;
-        if (typeof window !== "undefined") {
-          window.globalCustomAuthInstance = this;
-        }
-        console.log('✓ [CustomAuth] Instance saved to globalCustomAuthInstance in constructor');
-      }
-
-      authenticate() {
-        console.log('=== [CustomAuth] authenticate() called ===');
-        console.log('CustomAuth instance:', this);
-        console.log('Auth URL:', this.auth_url);
-        
-        // すでにtokenがあるなら即resolve
-        if (this.token) {
-          console.log('✓ Token already exists, resolving immediately');
-          return Promise.resolve({ token: this.token });
-        }
-        
-        // グローバル変数にインスタンスを保存（グローバルリスナーから呼び出せるように）
-        globalCustomAuthInstance = this;
-        if (typeof window !== "undefined") {
-          window.globalCustomAuthInstance = this;
-        }
-        console.log('✓ [CustomAuth] Instance saved to global variable');
-        
-        // 既存のPromiseをクリア
-        if (this.checkClosedInterval) {
-          clearInterval(this.checkClosedInterval);
-          this.checkClosedInterval = null;
-        }
-        
-        // 新しいPromiseを作成
-        this.authPromise = new Promise((resolve, reject) => {
-          this.authResolve = resolve;
-          this.authReject = reject;
-        });
-        
-        console.log('=== Opening auth window ===');
-        console.log('Auth URL:', `${this.auth_url}?provider=github&site_id=${window.location.host}`);
-        console.log('Current origin:', window.location.origin);
-        
-        const auth_url = `${this.auth_url}?provider=github&site_id=${window.location.host}`;
-        this.authWindow = window.open(auth_url, "Netlify Authorization", "width=600,height=800");
-        
-        if (!this.authWindow) {
-          this.authReject(new Error("ポップアップがブロックされました。ポップアップブロッカーを無効にしてください。"));
-          this.cleanup();
-          return this.authPromise;
-        }
-        
-        console.log('Auth window opened:', this.authWindow);
-        
-        // ウィンドウが閉じられた場合の監視
-        this.checkClosedInterval = setInterval(() => {
-          if (this.authWindow?.closed) {
-            if (this.checkClosedInterval) {
-              clearInterval(this.checkClosedInterval);
-              this.checkClosedInterval = null;
-            }
-            if (this.authReject) {
-              this.authReject(new Error("認証ウィンドウが閉じられました"));
-              this.cleanup();
-            }
-          }
-        }, 1000);
-        
-        return this.authPromise;
-      }
-      
-      handleAuthMessage(event) {
-        console.log('=== [CustomAuth] handleAuthMessage called ===');
-        console.log('Event origin:', event.origin);
-        console.log('Expected origin:', window.location.origin);
-        console.log('Event data:', event.data);
-        console.log('Event data type:', typeof event.data);
-        
-        if (event.origin !== window.location.origin) {
-          console.warn(`✗ Ignored message from different origin: ${event.origin} (expected: ${window.location.origin})`);
-          return;
-        }
-        
-        console.log('✓ Origin check passed');
-        
-        // Decap CMS標準の文字列形式メッセージを処理
-        if (typeof event.data === 'string' && event.data.startsWith('authorization:github:success:')) {
-          const token = event.data.replace('authorization:github:success:', '');
-          console.log('✓ Valid authorization success message received');
-          console.log('Token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'no token');
-          
-          this.token = token;
-          console.log('✓ Token stored, authentication successful');
-          
-          if (this.authResolve) {
-            // ここでDecap CMSにtokenを返す
-            console.log('✓ Resolving auth promise with token');
-            this.authResolve({ token: this.token });
-            this.cleanup();
-          } else {
-            console.warn('⚠ No auth promise to resolve (token stored but promise not created yet)');
-          }
-          
-          if (this.authWindow && !this.authWindow.closed) {
-            this.authWindow.close();
-          }
-          
-          return;
-        } else if (typeof event.data === 'string' && event.data.startsWith('authorization:github:error:')) {
-          const errorMsg = event.data.replace('authorization:github:error:', '');
-          console.error('✗ Authorization error received');
-          console.error('Error:', errorMsg);
-          
-          if (this.authReject) {
-            console.log('✗ Rejecting auth promise with error');
-            this.authReject(new Error(errorMsg || '認証エラーが発生しました'));
-            this.cleanup();
-          } else {
-            console.warn('⚠ No auth promise to reject');
-          }
-          
-          if (this.authWindow && !this.authWindow.closed) {
-            this.authWindow.close();
-          }
-          
-          return;
-        }
-        
-        // 後方互換性: 古いオブジェクト形式のメッセージも処理
-        if (event.data && typeof event.data === 'object') {
-          if (event.data.type === 'authorization_response' && event.data.payload && event.data.payload.token) {
-            const token = event.data.payload.token;
-            console.log('✓ Valid authorization response received (legacy format)');
-            console.log('Token (first 10 chars):', token ? token.substring(0, 10) + '...' : 'no token');
-            
-            this.token = token;
-            console.log('✓ Token stored, authentication successful');
-            
-            if (this.authResolve) {
-              console.log('✓ Resolving auth promise with token');
-              this.authResolve({ token: this.token });
-              this.cleanup();
-            } else {
-              console.warn('⚠ No auth promise to resolve');
-            }
-            
-            if (this.authWindow && !this.authWindow.closed) {
-              this.authWindow.close();
-            }
-            
-            return;
-          } else if (event.data.type === 'authorization_error') {
-            const errorMsg = event.data.payload?.error || '認証エラーが発生しました';
-            console.error('✗ Authorization error received (legacy format)');
-            console.error('Error:', errorMsg);
-            
-            if (this.authReject) {
-              console.log('✗ Rejecting auth promise with error');
-              this.authReject(new Error(errorMsg));
-              this.cleanup();
-            } else {
-              console.warn('⚠ No auth promise to reject');
-            }
-            
-            if (this.authWindow && !this.authWindow.closed) {
-              this.authWindow.close();
-            }
-            
-            return;
-          }
-        }
-        
-        console.warn('✗ Invalid message format:', {
-          hasData: !!event.data,
-          dataType: typeof event.data,
-          dataValue: typeof event.data === 'string' ? event.data.substring(0, 100) : event.data
-        });
-      }
-      
-      cleanup() {
-        if (this.checkClosedInterval) {
-          clearInterval(this.checkClosedInterval);
-          this.checkClosedInterval = null;
-        }
-        this.authWindow = null;
-        this.authPromise = null;
-        this.authResolve = null;
-        this.authReject = null;
-      }
-
-
-      async getUser() {
-        if (!this.token) {
-          console.error("getUser called but no token available");
-          throw new Error("Not authenticated");
-        }
-
-        console.log("Fetching user info from GitHub API");
-        const res = await fetch("https://api.github.com/user", {
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-            Accept: "application/vnd.github.v3+json",
-          },
-        });
-
-        if (!res.ok) {
-          console.error("GitHub API error:", res.status, res.statusText);
-          const err = await res.json();
-          console.error("GitHub API error details:", err);
-          throw err;
-        }
-
-        const data = await res.json();
-        console.log("User info retrieved:", data.login);
-        return {
-          name: data.name || data.login,
-          login: data.login,
-          avatar_url: data.avatar_url,
-        };
-      }
-
-      logout() {
-        this.token = null;
-        return Promise.resolve();
-      }
-
-      getToken() {
-        return Promise.resolve(this.token);
-      }
-      
-      // Decap CMSが要求するauthComponentメソッド（認証UIコンポーネントを返す）
-      // カスタムバックエンドの場合はnullを返す（標準の認証UIを使用しない）
-      authComponent() {
-        return null;
-      }
-    }
-
     // Decap CMSが読み込まれるのを待つ
-    let cmsInitialized = false;
-    let backendRegistered = false;
-    
     function waitForCMS() {
       const CMS = window.CMS || window.DecapCMS || window.NETLIFY_CMS;
       
@@ -308,14 +30,6 @@
         setTimeout(waitForCMS, 100);
         return;
       }
-      
-      if (cmsInitialized) {
-        return; // 既に初期化済みの場合は何もしない
-      }
-      
-      console.log('✓ Decap CMS loaded from CDN');
-      console.log('CMS object:', CMS);
-      console.log('Available methods:', Object.keys(CMS));
       
       // マウントポイントが存在することを確認
       const mountPoint = document.getElementById('nc-root');
@@ -328,48 +42,6 @@
       // マウントポイントをクリア（DOMエラーを回避）
       mountPoint.innerHTML = '';
       
-      // カスタムバックエンドを正式に登録（CMS.init()の前に実行する必要がある）
-      console.log('=== Backend registration process ===');
-      console.log('Registering custom backend as "custom-github"...');
-      console.log('CustomAuth class:', CustomAuth);
-      console.log('CustomAuth methods:', Object.getOwnPropertyNames(CustomAuth.prototype));
-      
-      // バックエンドを正式に登録
-      if (typeof CMS.registerBackend === 'function') {
-        try {
-          CMS.registerBackend("custom-github", CustomAuth);
-          backendRegistered = true;
-          console.log('✓ Custom backend registered successfully as "custom-github"');
-          
-          // バックエンドが正しく登録されたか確認
-          if (CMS.backends && CMS.backends["custom-github"]) {
-            console.log('✓ Backend confirmed in CMS.backends["custom-github"]');
-            console.log('Registered backend === CustomAuth:', CMS.backends["custom-github"] === CustomAuth);
-          } else {
-            console.warn('⚠ Backend not found in CMS.backends["custom-github"] after registration');
-            // CMS.getBackend()で確認を試みる
-            if (typeof CMS.getBackend === 'function') {
-              try {
-                const backend = CMS.getBackend("custom-github");
-                console.log('Backend from CMS.getBackend("custom-github"):', backend);
-                console.log('Backend === CustomAuth:', backend === CustomAuth);
-              } catch (error) {
-                console.warn('CMS.getBackend() failed:', error.message);
-              }
-            }
-          }
-        } catch (error) {
-          console.error('✗ Failed to register custom backend:', error);
-          console.error('Error details:', error.message, error.stack);
-          backendRegistered = false;
-        }
-      } else {
-        console.error('✗ CMS.registerBackend is not available');
-        backendRegistered = false;
-      }
-      
-      console.log('CMS.backends after registration:', CMS.backends);
-      
       // CMS.init()が利用可能になるまで待つ
       if (typeof CMS.init !== 'function') {
         console.log('Waiting for CMS.init...');
@@ -377,23 +49,16 @@
         return;
       }
       
-      // バックエンド登録後に少し待ってからCMS.init()を呼び出す（登録が確実に完了するまで待つ）
-      setTimeout(() => {
-        // CMSを初期化
-        // config.ymlが自動的に読み込まれるので、CMS.init()を引数なしで呼び出す
-        console.log('Initializing CMS...');
-        try {
-          // config.ymlから自動的に設定を読み込む
-          CMS.init();
-          cmsInitialized = true;
-          console.log('✓ Decap CMS initialized successfully');
-        } catch (error) {
-          console.error('✗ Failed to initialize CMS:', error);
-          console.error('Error details:', error.message, error.stack);
-          // エラーが発生しても再試行しない（無限ループを防ぐ）
-          cmsInitialized = true;
-        }
-      }, 100); // 100ms待ってからCMS.init()を呼び出す
+      // CMSを初期化
+      // config.ymlが自動的に読み込まれるので、CMS.init()を引数なしで呼び出す
+      console.log('Initializing CMS...');
+      try {
+        CMS.init();
+        console.log('✓ Decap CMS initialized successfully');
+      } catch (error) {
+        console.error('✗ Failed to initialize CMS:', error);
+        console.error('Error details:', error.message, error.stack);
+      }
     }
     
     // DOMが完全に読み込まれてから初期化を開始
@@ -407,5 +72,3 @@
   </script>
 </body>
 </html>
-
-
