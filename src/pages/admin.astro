@@ -72,6 +72,33 @@
         console.warn('⚠ [GLOBAL] CustomAuth instance not available yet');
         console.warn('⚠ [GLOBAL] This might mean authenticate() has not been called yet');
         console.warn('⚠ [GLOBAL] Event data:', event.data);
+        
+        // CustomAuthインスタンスが利用可能になるまで待ってから再試行
+        // これは、postMessageがauthenticate()の呼び出しより前に届いた場合の対策
+        if (event.data && (event.data.type === 'authorization_response' || event.data.type === 'authorization_error')) {
+          console.log('=== [GLOBAL] Retrying after delay (waiting for CustomAuth instance) ===');
+          let retryCount = 0;
+          const maxRetries = 10;
+          const retryInterval = setInterval(() => {
+            retryCount++;
+            console.log(`=== [GLOBAL] Retry attempt ${retryCount}/${maxRetries} ===`);
+            console.log('globalCustomAuthInstance exists:', !!globalCustomAuthInstance);
+            
+            if (globalCustomAuthInstance && typeof globalCustomAuthInstance.authCallback === 'function') {
+              console.log('✓ [GLOBAL] CustomAuth instance found, forwarding message');
+              clearInterval(retryInterval);
+              try {
+                globalCustomAuthInstance.authCallback(event);
+                console.log('✓ [GLOBAL] authCallback completed after retry');
+              } catch (error) {
+                console.error('✗ [GLOBAL] Error in authCallback after retry:', error);
+              }
+            } else if (retryCount >= maxRetries) {
+              console.error('✗ [GLOBAL] Max retries reached, CustomAuth instance still not available');
+              clearInterval(retryInterval);
+            }
+          }, 200); // 200msごとに再試行
+        }
       }
     }, false);
     
