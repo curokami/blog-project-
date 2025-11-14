@@ -36,15 +36,26 @@
       console.log('Timestamp:', new Date().toISOString());
       
       // CustomAuthインスタンスが存在する場合、authCallbackも呼び出す
+      console.log('=== [GLOBAL] Checking CustomAuth instance ===');
+      console.log('globalCustomAuthInstance exists:', !!globalCustomAuthInstance);
+      console.log('globalCustomAuthInstance type:', typeof globalCustomAuthInstance);
+      console.log('authCallback exists:', !!globalCustomAuthInstance?.authCallback);
+      console.log('authCallback type:', typeof globalCustomAuthInstance?.authCallback);
+      
       if (globalCustomAuthInstance && typeof globalCustomAuthInstance.authCallback === 'function') {
         console.log('=== [GLOBAL] Forwarding to authCallback ===');
         try {
           globalCustomAuthInstance.authCallback(event);
+          console.log('✓ [GLOBAL] authCallback completed without errors');
         } catch (error) {
           console.error('✗ [GLOBAL] Error in authCallback:', error);
+          console.error('Error message:', error.message);
+          console.error('Error stack:', error.stack);
         }
       } else {
         console.warn('⚠ [GLOBAL] CustomAuth instance not available yet');
+        console.warn('⚠ [GLOBAL] This might mean authenticate() has not been called yet');
+        console.warn('⚠ [GLOBAL] Event data:', event.data);
       }
     }, false);
     
