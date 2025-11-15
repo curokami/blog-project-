@@ -20,10 +20,8 @@
 html.dark {
   /* --- ダークモード --- */
   --color-bg: #111827;
-  --color-text-base: #ffffff;      /* 本文: 白 */
-  /* ▼▼▼ この行の値を、より落ち着いたライトグレーに変更します ▼▼▼ */
-  --color-text-heading: #e5e7eb;   /* 見出し: ライトグレー (gray-200) に変更 */
-  /* ▲▲▲ 変更ここまで ▲▲▲ */
+  --color-text-base: #93A4B8;      /* 本文: スレートグレー */
+  --color-text-heading: #e5e7eb;   /* 見出し: ライトグレー (gray-200) */
   --color-accent: #3b82f6;
   --color-accent-hover: #2563eb;
   --color-card-bg: #1f2937;
