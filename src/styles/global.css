@@ -9,7 +9,7 @@
 :root {
   /* --- ライトモード --- */
   --color-bg: #ffffff;
-  --color-text-base: #1f2937;      /* 本文: 黒に近いグレー (gray-800) */
+  --color-text-base: #93A4B8;      /* 本文: スレートグレー */
   --color-text-heading: #111827;   /* 見出し: 黒に近いグレー (gray-900) */
   --color-accent: #3b82f6;         /* アクセント: 青 (blue-500) */
   --color-accent-hover: #2563eb;   /* アクセント(ホバー): 濃い青 (blue-600) */
