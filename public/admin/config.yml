@@ -1,3 +1,5 @@
+publish_mode: editorial_workflow
+
 backend:
   name: github
   repo: curokami/blog-project-
