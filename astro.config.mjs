@@ -6,7 +6,6 @@ import preact from '@astrojs/preact';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://blog-project-398.pages.dev', // 本番のドメインを指定
   output: 'static',
   integrations: [preact(), tailwind()],
   vite: {
