@@ -30,9 +30,15 @@ import Header from '../components/Header.astro'; // ✅ 追加
     <h3 class="mt-8 text-lg font-semibold text-blue-500">Connect</h3>
     <!-- ✅ ここを縦並びに変更 -->
 <div class="flex flex-col items-center gap-4 bg-[var(--color-card-bg)] p-4 rounded-lg max-w-xs mx-auto mt-4">
-  <a href="https://twitter.com" class="flex items-center justify-center gap-2 text-[var(--color-text-heading)] hover:text-blue-500">
+  <a
+    href="https://x.com/suihan"
+    class="flex items-center gap-2 text-slate-200 hover:text-slate-50 transition-colors"
+    aria-label="Follow me on X"
+    target="_blank"
+    rel="noreferrer"
+  >
     <Icon name="x-twitter" className="w-5 h-5" />
-    <span>Twitter</span>
+    <span>X</span>
   </a>
   <a href="https://instagram.com" class="flex items-center justify-center gap-2 text-[var(--color-text-heading)] hover:text-blue-500">
     <Icon name="instagram" className="w-5 h-5" />
