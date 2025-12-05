@@ -6,7 +6,7 @@ const postsCollection = defineCollection({
   schema: z.object({
     title: z.string(),
     pubDate: z.date(),
-    author: z.string(),
+    author: z.string().default('suihan'),
     description: z.string(), // ← この行を追加
     image: z.string().optional(), 
     tags: z.array(z.string()).optional(),
