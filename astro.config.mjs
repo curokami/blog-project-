@@ -3,11 +3,15 @@ import { defineConfig } from 'astro/config';
 
 import tailwind from '@astrojs/tailwind';
 import preact from '@astrojs/preact';
+import remarkBreaks from 'remark-breaks';
 
 // https://astro.build/config
 export default defineConfig({
   output: 'static',
   integrations: [preact(), tailwind()],
+  markdown: {
+    remarkPlugins: [remarkBreaks],
+  },
   vite: {
     optimizeDeps: {
       exclude: ['clean-stack'], // clean-stack をクライアントビルドから除外
