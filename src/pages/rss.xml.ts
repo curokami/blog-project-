@@ -6,7 +6,7 @@ export async function GET() {
   return rss({
     title: 'My Blog RSS Feed',
     description: 'Subscribe to get the latest blog posts.',
-    site: 'http://localhost:4321', // 本番環境では https://your-domain.com に変更
+    site: 'https://nanpasen.mozuc.dev/',
     items: posts
       .filter(post => !post.data.draft)
       .sort((a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime())
